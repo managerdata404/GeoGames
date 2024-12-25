@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zombie Shooter Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #001;
+      overflow: hidden;
+    }
+    #gameCanvas {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(to bottom, #333, #111);
+      overflow: hidden;
+    }
+    .shooter {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 40px;
+    }
+    .zombie {
+      position: absolute;
+      font-size: 30px;
+      animation: zombieMove linear 4s forwards;
+    }
+    .gold-zombie {
+      color: gold;
+      font-size: 35px;
+      font-weight: bold;
+    }
+    .bullet {
+      position: absolute;
+      width: 10px;
+      height: 20px;
+      background-color: red;
+      border-radius: 50%;
+    }
+    .explosion {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: radial-gradient(circle, yellow, red);
+      border-radius: 50%;
+      animation: explode 0.5s linear forwards;
+    }
+    #score, #lives, #level {
+      position: absolute;
+      color: white;
+      font-size: 18px;
+      left: 10px;
+    }
+    #score { top: 10px; }
+    #lives { top: 40px; }
+    #level { top: 70px; }
+    #gameOverScreen {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      text-align: center;
+    }
+    #gameOverScreen button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: red;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    @keyframes zombieMove {
+      from { top: -50px; }
+      to { top: 100%; }
+    }
+    @keyframes explode {
+      from { transform: scale(1); opacity: 1; }
+      to { transform: scale(2); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameCanvas">
+    <div id="score">Score: 0</div>
+    <div id="lives">Lives: 10</div>
+    <div id="level">Level: 1</div>
+    <div id="gameOverScreen">
+      <h1>Game Over</h1>
+      <p id="finalScore">Your Score: 0</p>
+      <button onclick="restartGame()">Restart</button>
+    </div>
+    <div class="shooter" id="shooter">🔫</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const scoreDisplay = document.getElementById('score');
+    const livesDisplay = document.getElementById('lives');
+    const levelDisplay = document.getElementById('level');
+    const shooter = document.getElementById('shooter');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const finalScore = document.getElementById('finalScore');
+
+    let score = 0;
+    let lives = 10;
+    let level = 1;
+    let zombies = [];
+    let gameInterval;
+    const shooterIcons = ["🔫", "🚀", "🛸", "🚁", "🛥️", "🚗", "🛳️", "🚀", "🛸", "🛠️"];
+    const backgroundColors = [
+      "linear-gradient(to bottom, #333, #111)", // Level 1
+      "linear-gradient(to bottom, #444, #222)", // Level 2
+      "linear-gradient(to bottom, #555, #333)", // Level 3
+      "linear-gradient(to bottom, #666, #444)", // Level 4
+      "linear-gradient(to bottom, #777, #555)", // Level 5
+      "linear-gradient(to bottom, #888, #666)", // Level 6
+      "linear-gradient(to bottom, #999, #777)", // Level 7
+      "linear-gradient(to bottom, #aaa, #888)", // Level 8
+      "linear-gradient(to bottom, #bbb, #999)", // Level 9
+      "linear-gradient(to bottom, #ccc, #aaa)"  // Level 10
+    ];
+
+    function moveShooter(event) {
+      const touchX = event.touches?.[0]?.clientX || event.clientX;
+      shooter.style.left = `${touchX}px`;
+    }
+    canvas.addEventListener('mousemove', moveShooter);
+    canvas.addEventListener('touchmove', moveShooter);
+
+    function spawnZombie() {
+      const zombie = document.createElement('div');
+      zombie.classList.add('zombie');
+      zombie.textContent = Math.random() < 0.1 ? '👑' : '🧟‍♂️';
+      if (zombie.textContent === '👑') zombie.classList.add('gold-zombie');
+
+      zombie.style.left = `${Math.random() * 90}vw`;
+      canvas.appendChild(zombie);
+
+      const speed = level >= 5 ? 2 : 4; // Faster zombies after level 5
+      zombie.style.animationDuration = `${speed}s`;
+
+      zombie.addEventListener('animationend', () => {
+        if (canvas.contains(zombie)) {
+          zombie.remove();
+          loseLife();
+        }
+      });
+      zombies.push(zombie);
+    }
+
+    function shootBullet() {
+      createBullet(shooter.offsetLeft + 20, 60, 0);
+    }
+
+    function createBullet(x, y, angle) {
+      const bullet = document.createElement('div');
+      bullet.classList.add('bullet');
+      bullet.style.left = `${x}px`;
+      bullet.style.bottom = `${y}px`;
+      canvas.appendChild(bullet);
+
+      const bulletInterval = setInterval(() => {
+        y += 10;
+        x += angle;
+        bullet.style.bottom = `${y}px`;
+        bullet.style.left = `${x}px`;
+
+        zombies.forEach((zombie) => {
+          const bulletRect = bullet.getBoundingClientRect();
+          const zombieRect = zombie.getBoundingClientRect();
+
+          if (
+            bulletRect.left < zombieRect.right &&
+            bulletRect.right > zombieRect.left &&
+            bulletRect.top < zombieRect.bottom &&
+            bulletRect.bottom > zombieRect.top
+          ) {
+            handleHit(zombie, bullet);
+            clearInterval(bulletInterval);
+          }
+        });
+
+        if (y > window.innerHeight) {
+          bullet.remove();
+          clearInterval(bulletInterval);
+        }
+      }, 50);
+    }
+
+    function handleHit(zombie, bullet) {
+      createExplosion(zombie.offsetLeft, zombie.offsetTop);
+      if (zombie.textContent === '👑') {
+        lives++;
+        score += 50;
+        livesDisplay.textContent = `Lives: ${lives}`;
+      } else {
+        score += 10;
+      }
+      scoreDisplay.textContent = `Score: ${score}`;
+      zombie.remove();
+      zombies = zombies.filter((z) => z !== zombie);
+      bullet.remove();
+
+      if (score % 200 === 0) levelUp();
+    }
+
+    function createExplosion(x, y) {
+      const explosion = document.createElement('div');
+      explosion.classList.add('explosion');
+      explosion.style.left = `${x}px`;
+      explosion.style.top = `${y}px`;
+      canvas.appendChild(explosion);
+      setTimeout(() => explosion.remove(), 500);
+
+      // Beep sound effect
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      oscillator.type = "square";
+      oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+      oscillator.connect(audioCtx.destination);
+      oscillator.start();
+      setTimeout(() => {
+        oscillator.stop();
+        audioCtx.close();
+      }, 100);
+    }
+
+    function levelUp() {
+      level++;
+      levelDisplay.textContent = `Level: ${level}`;
+      shooter.textContent = shooterIcons[level - 1] || shooterIcons[0];
+      canvas.style.background = backgroundColors[level - 1] || backgroundColors[backgroundColors.length - 1];
+      clearInterval(gameInterval);
+      gameInterval = setInterval(spawnZombie, Math.max(800 - level * 60, 200));
+      if (level >= 5) spawnZombie(); // Double zombies for level 5+
+    }
+
+    function loseLife() {
+      lives--;
+      livesDisplay.textContent = `Lives: ${lives}`;
+      if (lives === 0) gameOver();
+    }
+
+    function gameOver() {
+      clearInterval(gameInterval);
+      zombies.forEach((zombie) => zombie.remove());
+      zombies = [];
+      gameOverScreen.style.display = 'block';
+      finalScore.textContent = `Your Score: ${score}`;
+    }
+
+    function restartGame() {
+      gameOverScreen.style.display = 'none';
+      score = 0;
+      lives = 10;
+      level = 1;
+      scoreDisplay.textContent = `Score: ${score}`;
+      livesDisplay.textContent = `Lives: ${lives}`;
+      levelDisplay.textContent = `Level: ${level}`;
+      canvas.style.background = backgroundColors[0];
+      gameInterval = setInterval(spawnZombie, 1000);
+    }
+
+    document.addEventListener('click', shootBullet);
+    document.addEventListener('touchstart', shootBullet);
+    gameInterval = setInterval(spawnZombie, 1000);
+  </script>
+</body>
+</html>
