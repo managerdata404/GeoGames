@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Falling Ball Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 18px;
+    }
+    #gameOver {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 24px;
+      display: none;
+      text-align: center;
+    }
+    button {
+      background-color: #555;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    Score: <span id="score">0</span> | Lives: <span id="lives">20</span> | Level: <span id="level">1</span>
+  </div>
+  <div id="gameOver">
+    <p>Game Over!</p>
+    <button onclick="restartGame()">Restart</button>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    let scene, camera, renderer, pyramids = [], balls = [], score = 0, lives = 20, level = 1, gameRunning = true, ballSpeed = 0.1;
+
+    const targetPositions = [];
+
+    function init() {
+      // Scene and Camera
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      // Grid Floor
+      const gridHelper = new THREE.GridHelper(50, 50, 0xffffff, 0x555555);
+      gridHelper.position.y = -5;
+      scene.add(gridHelper);
+
+      // Add initial pyramid
+      addPyramid();
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      const pointLight = new THREE.PointLight(0xffffff, 1);
+      pointLight.position.set(0, 20, 20);
+      pointLight.castShadow = true;
+      scene.add(ambientLight, pointLight);
+
+      camera.position.set(0, 15, 25);
+      camera.lookAt(0, 0, 0);
+
+      // Spawn balls
+      spawnBalls();
+      animate();
+    }
+
+    function addPyramid() {
+      const basketGeometry = new THREE.CylinderGeometry(0, 5, 5, 4, 1);
+      const basketMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, flatShading: true });
+      const basket = new THREE.Mesh(basketGeometry, basketMaterial);
+      basket.position.set(0, -2, pyramids.length * -5);
+      basket.castShadow = true;
+      pyramids.push(basket);
+      targetPositions.push(new THREE.Vector3(basket.position.x, basket.position.y, basket.position.z));
+      scene.add(basket);
+    }
+
+    function spawnBalls() {
+      if (!gameRunning) return;
+      const ballGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+      const ballMaterial = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
+      const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+      ball.position.set(Math.random() * 20 - 10, 10, Math.random() * 20 - 10);
+      ball.castShadow = true;
+      scene.add(ball);
+      balls.push({ mesh: ball, falling: true });
+
+      setTimeout(spawnBalls, 2000 / level);
+    }
+
+    function createExplosion(position) {
+      const explosionGeometry = new THREE.SphereGeometry(1, 16, 16);
+      const explosionMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const explosion = new THREE.Mesh(explosionGeometry, explosionMaterial);
+      explosion.position.copy(position);
+      scene.add(explosion);
+
+      setTimeout(() => {
+        scene.remove(explosion);
+      }, 500);
+    }
+
+    function updatePyramids() {
+      pyramids.forEach((pyramid, index) => {
+        pyramid.position.lerp(targetPositions[index], 0.1);
+      });
+    }
+
+    function checkCollisions() {
+      balls.forEach((ball, index) => {
+        if (!ball.falling) return;
+
+        ball.mesh.position.y -= ballSpeed;
+
+        if (ball.mesh.position.y <= -5) {
+          scene.remove(ball.mesh);
+          balls.splice(index, 1);
+          lives--;
+          document.getElementById('lives').textContent = lives;
+          if (lives <= 0) endGame();
+        }
+
+        pyramids.forEach((pyramid) => {
+          const distance = ball.mesh.position.distanceTo(pyramid.position);
+          if (distance < 2 && ball.mesh.position.y <= pyramid.position.y) {
+            ball.falling = false;
+            createExplosion(ball.mesh.position);
+            scene.remove(ball.mesh);
+            balls.splice(index, 1);
+            score++;
+            document.getElementById('score').textContent = score;
+            if (score % 5 === 0) nextLevel();
+          }
+        });
+      });
+    }
+
+    function nextLevel() {
+      level++;
+      ballSpeed += 0.05;
+      addPyramid();
+      document.getElementById('level').textContent = level;
+    }
+
+    function endGame() {
+      gameRunning = false;
+      document.getElementById('gameOver').style.display = 'block';
+    }
+
+    function restartGame() {
+      score = 0;
+      lives = 20;
+      level = 1;
+      ballSpeed = 0.1;
+      pyramids.forEach(pyramid => scene.remove(pyramid));
+      pyramids = [];
+      targetPositions.length = 0;
+      balls.forEach(ball => scene.remove(ball.mesh));
+      balls = [];
+      addPyramid();
+      document.getElementById('score').textContent = score;
+      document.getElementById('lives').textContent = lives;
+      document.getElementById('level').textContent = level;
+      document.getElementById('gameOver').style.display = 'none';
+      gameRunning = true;
+      spawnBalls();
+      animate();
+    }
+
+    function animate() {
+      if (!gameRunning) return;
+      requestAnimationFrame(animate);
+      updatePyramids();
+      checkCollisions();
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('mousemove', (event) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 50 - 25;
+      const z = ((event.clientY - rect.top) / rect.height) * 50 - 25;
+
+      pyramids.forEach((pyramid, index) => {
+        targetPositions[index].set(x, pyramids[index].position.y, z - index * 5);
+      });
+    });
+
+    window.addEventListener('touchmove', (event) => {
+      const touch = event.touches[0];
+      const rect = renderer.domElement.getBoundingClientRect();
+      const x = ((touch.clientX - rect.left) / rect.width) * 50 - 25;
+      const z = ((touch.clientY - rect.top) / rect.height) * 50 - 25;
+
+      pyramids.forEach((pyramid, index) => {
+        targetPositions[index].set(x, pyramids[index].position.y, z - index * 5);
+      });
+    });
+
+    init();
+  </script>
+</body>
+</html>
