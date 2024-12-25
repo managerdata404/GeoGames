@@ -110,6 +110,19 @@
             border-radius: 6px;
         }
 
+        /* Scroll-to-Top Button */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #007BFF;
+            color: white;
+            padding: 0.5em 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none; /* Hidden initially */
+        }
+
         /* Footer */
         footer {
             text-align: center;
@@ -148,6 +161,9 @@
     <!-- Toggle Button -->
     <button class="toggle-btn" id="toggle-btn">☰ Menu</button>
 
+    <!-- Scroll-to-Top Button -->
+    <button id="scrollToTop" class="scroll-to-top">↑ Top</button>
+
     <!-- Main Content -->
     <main>
         <h1>Welcome to Geosciences Gaming</h1>
@@ -163,41 +179,39 @@
             <div class="game-category" id="2d-games">
                 <h3>2D Games</h3>
                 <ul class="game-list">
-                    <li>🌋 <a href="game1.html">Rock Identification Challenge</a></li>
-                    <li>☁️ <a href="game2.html">Weather Pattern Puzzle</a></li>
+                    <li><a href="game1.html">Rock Identification Challenge</a></li>
+                    <li><a href="game2.html">Weather Pattern Puzzle</a></li>
                 </ul>
             </div>
 
             <div class="game-category" id="3d-games">
                 <h3>3D Games</h3>
                 <ul class="game-list">
-                    <li>🌊 <a href="game3.html">Ocean Currents Adventure</a></li>
-                </ul>
-            </div>
-
-            <div class="game-category" id="vr-games">
-                <h3>VR Games</h3>
-                <ul class="game-list">
-                    <li>🔥 <a href="game6.html">Volcano Eruption Experience</a></li>
+                    <li><a href="game3.html">Ocean Currents Adventure</a></li>
                 </ul>
             </div>
         </section>
-
-        <section id="contact">
-            <h2>Contact Us</h2>
-            <p>Email us at <a href="mailto:email@example.com">email@example.com</a>.</p>
-        </section>
-
-        <footer>
-            &copy; 2024 Geosciences Gaming. All Rights Reserved.
-        </footer>
     </main>
 
     <script>
         const toggleBtn = document.getElementById('toggle-btn');
         const sidebar = document.getElementById('sidebar');
+        const scrollToTop = document.getElementById('scrollToTop');
+
         toggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('show');
+        });
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                scrollToTop.style.display = 'block';
+            } else {
+                scrollToTop.style.display = 'none';
+            }
+        });
+
+        scrollToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     </script>
 
