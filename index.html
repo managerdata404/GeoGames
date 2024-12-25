@@ -3,93 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geosciences Gaming - Learn Through Play</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Geosciences Gaming</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         /* General Styles */
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Nunito', sans-serif;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             height: 100vh;
             display: flex;
-            overflow: hidden;
+            background: #f7f9fc;
         }
 
-        /* Sidebar Navigation */
+        /* Sidebar */
         .sidebar {
             width: 250px;
             height: 100%;
-            background-color: #1E90FF;
+            background: linear-gradient(135deg, #007BFF, #00BFFF);
             color: white;
             position: fixed;
-            transition: transform 0.3s ease;
-            box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
+            transition: transform 0.3s ease-in-out;
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+            padding-top: 1em;
         }
         .sidebar.hide {
             transform: translateX(-250px);
-        }
-        .sidebar h1 {
-            text-align: center;
-            font-size: 1.5em;
-            padding: 1em 0;
-            border-bottom: 1px solid #ffffff55;
         }
         .sidebar a {
             display: block;
             padding: 1em 1.5em;
             color: white;
-            font-weight: 500;
             text-decoration: none;
-            transition: background 0.3s ease;
+            font-size: 1.1em;
+            transition: 0.3s;
         }
         .sidebar a:hover {
-            background-color: #007BFF;
+            background: rgba(255, 255, 255, 0.2);
+            padding-left: 2em;
         }
 
         /* Toggle Button */
         .toggle-btn {
             position: absolute;
-            top: 10px;
+            top: 15px;
             left: 260px;
             cursor: pointer;
-            background-color: #007BFF;
+            background: #007BFF;
             color: white;
             padding: 0.5em 1em;
-            border-radius: 5px;
             border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: 0.3s ease;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: 0.3s;
         }
         .toggle-btn:hover {
-            background-color: #0056b3;
-        }
-
-        /* Header */
-        header {
-            width: 100%;
-            background-color: #1E90FF;
-            color: white;
-            padding: 1em;
-            text-align: center;
-            position: fixed;
-            top: 0;
-            z-index: 500;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: #0056b3;
         }
 
         /* Main Content */
         main {
-            margin-left: 250px;
-            margin-top: 60px;
-            padding: 2em;
             flex-grow: 1;
-            overflow-y: auto;
-            transition: margin-left 0.3s ease;
+            margin-left: 250px;
+            padding: 2em;
+            transition: margin-left 0.3s ease-in-out;
         }
         .sidebar.hide + main {
             margin-left: 0;
@@ -98,20 +76,20 @@
         section {
             margin-bottom: 2em;
             padding: 2em;
-            background-color: white;
+            background: white;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         section h2 {
-            color: #007BFF;
             font-size: 1.8em;
+            color: #007BFF;
             margin-bottom: 1em;
         }
 
         /* Game List */
         .game-category h3 {
             font-size: 1.4em;
-            color: #0056b3;
+            color: #007BFF;
         }
         .game-list {
             list-style: none;
@@ -132,7 +110,7 @@
         footer {
             text-align: center;
             padding: 1em;
-            background-color: #1E90FF;
+            background: linear-gradient(135deg, #007BFF, #00BFFF);
             color: white;
             border-radius: 8px;
             margin-top: 2em;
@@ -160,6 +138,7 @@
         @media (max-width: 480px) {
             main {
                 margin-left: 0;
+                padding: 1em;
             }
             .toggle-btn {
                 left: 10px;
@@ -169,9 +148,8 @@
 </head>
 <body>
 
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-        <h1>Geosciences Gaming</h1>
         <a href="#about">About</a>
         <a href="#games">Games</a>
         <a href="#contact">Contact</a>
@@ -180,33 +158,31 @@
     <!-- Toggle Button -->
     <button class="toggle-btn" id="toggle-btn">☰ Menu</button>
 
-    <!-- Header -->
-    <header>
-        <h2>Geosciences Gaming - Learn Through Play</h2>
-    </header>
-
     <!-- Main Content -->
     <main>
         <section id="about">
             <h2>About Us</h2>
-            <p>Engaging and interactive games to learn geology, meteorology, and more.</p>
+            <p>Welcome to Geosciences Gaming – making science fun and interactive through games!</p>
         </section>
 
         <section id="games">
             <h2>Games</h2>
-            <ul class="game-list">
-                <li>🌋 <a href="game1.html">Rock Challenge</a></li>
-                <li>☁️ <a href="game2.html">Weather Puzzle</a></li>
-            </ul>
+            <div class="game-category">
+                <h3>2D Games</h3>
+                <ul class="game-list">
+                    <li>🌋 <a href="game1.html">Rock Identification</a></li>
+                    <li>☁️ <a href="game2.html">Weather Puzzle</a></li>
+                </ul>
+            </div>
         </section>
 
         <section id="contact">
             <h2>Contact</h2>
-            <p>email@example.com</p>
+            <p>Email us at <a href="mailto:email@example.com">email@example.com</a></p>
         </section>
 
         <footer>
-            &copy; 2024 Geosciences Gaming
+            &copy; 2024 Geosciences Gaming. All Rights Reserved.
         </footer>
     </main>
 
