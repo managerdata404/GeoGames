@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Nuclear Reactor Bouncing Balls with Fluid Resistance</title>
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+}
+#controls {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 1;
+}
+</style>
+</head>
+<body>
+<canvas id="myCanvas"></canvas>
+
+<div id="controls">
+  <label for="gravity">Gravity:</label>
+  <input type="range" id="gravity" min="0" max="1" step="0.01" value="0.1">
+
+  <label for="temperature">Temperature:</label>
+  <input type="range" id="temperature" min="0" max="1" step="0.01" value="0.5">
+
+  <label for="particleCount">Particle Count:</label>
+  <input type="number" id="particleCount" min="10" max="500" value="100">
+
+  <label for="particleSize">Particle Size:</label>
+  <input type="range" id="particleSize" min="1" max="10" step="1" value="5">
+
+  <label for="fluidHeight">Fluid Height:</label>
+  <input type="range" id="fluidHeight" min="0" max="0.5" step="0.01" value="0.25">
+
+  <label for="fluidType">Fluid Type:</label>
+  <select id="fluidType">
+    <option value="water">Water</option>
+    <option value="gas">Gas</option>
+    <option value="oil">Oil</option>
+  </select>
+</div>
+
+<script>
+const canvas = document.getElementById('myCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight - 50;
+
+const gravitySlider = document.getElementById('gravity');
+const temperatureSlider = document.getElementById('temperature');
+const particleCountInput = document.getElementById('particleCount');
+const particleSizeSlider = document.getElementById('particleSize');
+const fluidHeightSlider = document.getElementById('fluidHeight');
+const fluidTypeSelect = document.getElementById('fluidType');
+
+let numBalls = 100;
+let ballRadius = 5;
+let gravity = 0.1;
+let temperature = 0.5;
+let fluidHeight = 0.25; // Fraction of canvas height for fluid
+let fluidType = "water"; // Default fluid type
+
+// Fluid resistance coefficients
+const fluidResistanceCoefficients = {
+  water: 0.05,
+  gas: 0.01,
+  oil: 0.08
+};
+
+let balls = [];
+
+// Create ball objects
+function createBalls() {
+  balls = [];
+  for (let i = 0; i < numBalls; i++) {
+    balls.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 5,
+      vy: (Math.random() - 0.5) * 5,
+      radius: ballRadius,
+      color: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.8)`
+    });
+  }
+}
+
+// Function to draw a ball
+function drawBall(ball) {
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+  ctx.fillStyle = ball.color;
+  ctx.fill();
+}
+
+// Function to check for collisions and handle merging/disappearing
+function checkCollisions() {
+  for (let i = 0; i < balls.length - 1; i++) {
+    for (let j = i + 1; j < balls.length; j++) {
+      const dx = balls[i].x - balls[j].x;
+      const dy = balls[i].y - balls[j].y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < balls[i].radius + balls[j].radius) {
+        // Merge particles
+        balls[i].radius = Math.sqrt(balls[i].radius * balls[i].radius + balls[j].radius * balls[j].radius); // Combine radii
+        balls.splice(j, 1); // Remove the second particle
+      } else if (distance < 2 * ballRadius) { // Close proximity, but not merged
+        // Small repulsion to avoid overlapping
+        balls[i].vx += dx * 0.01;
+        balls[i].vy += dy * 0.01;
+        balls[j].vx -= dx * 0.01;
+        balls[j].vy -= dy * 0.01;
+      }
+    }
+  }
+}
+
+// Function to update ball positions and handle collisions
+function update() {
+  for (let i = 0; i < balls.length; i++) {
+    let ball = balls[i];
+
+    // Apply temperature effect to velocity
+    ball.vx += temperature * 0.1;
+    ball.vy += temperature * 0.1;
+
+    // Apply gravity
+    ball.vy += gravity;
+
+    // Apply fluid resistance
+    if (ball.y > canvas.height * (1 - fluidHeight)) {
+      ball.vx *= (1 - fluidResistanceCoefficients[fluidType]);
+      ball.vy *= (1 - fluidResistanceCoefficients[fluidType]);
+    }
+
+    // Bounce off walls
+    if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+      ball.vx = -ball.vx;
+    }
+    if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+      ball.vy = -ball.vy;
+    }
+
+    // Update position
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+  }
+
+  checkCollisions();
+}
+
+// Animation loop
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw fluid (optional)
+  ctx.fillStyle = 'lightblue'; // Default color for water
+  if (fluidType === "gas") {
+    ctx.fillStyle = 'rgba(220, 220, 220, 0.8)'; // Light gray for gas
+  } else if (fluidType === "oil") {
+    ctx.fillStyle = 'olive'; // Olive green for oil
+  }
+  ctx.fillRect(0, canvas.height * (1 - fluidHeight), canvas.width, canvas.height * fluidHeight);
+
+  update();
+
+  for (let i = 0; i < balls.length; i++) {
+    drawBall(balls[i]);
+  }
+
+  requestAnimationFrame(animate);
+}
+
+// Event listeners for controls
+gravitySlider.addEventListener('input', () => {
+  gravity = parseFloat(gravitySlider.value);
+});
+
+temperatureSlider.addEventListener('input', () => {
+  temperature = parseFloat(temperatureSlider.value);
+});
+
+particleCountInput.addEventListener('input', () => {
+  numBalls = parseInt(particleCountInput.value);
+  createBalls();
+});
+
+particleSizeSlider.addEventListener('input', () => {
+  ballRadius = parseInt(particleSizeSlider.value);
+  createBalls(); // Recreate balls with new radius
+});
+
+fluidHeightSlider.addEventListener('input', () => {
+  fluidHeight = parseFloat(fluidHeightSlider.value);
+});
+
+fluidTypeSelect.addEventListener('change', () => {
+  fluidType = fluidTypeSelect.value;
+});
+
+createBalls();
+animate();
+
+</script>
+</body>
+</html>
