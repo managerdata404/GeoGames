@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Ping Pong Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+        #gameOver { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; color: white; background-color: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div id="gameOver">
+        Game Over! Final Score: <span id="finalScore"></span>
+        <br><button onclick="restartGame()">Restart Game</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, racket, balls = [], floor, level = 1, lives = 3, score = 0, gameOver = false;
+        const ballRadius = 0.2, racketRadius = 1, floorHeight = -5;
+        const gravity = -0.2;  // Gravity value to simulate downward acceleration
+        let isDragging = false;
+
+        init();
+        animate();
+
+        function init() {
+            // Scene Setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Floor (Grid)
+            const floorGeometry = new THREE.PlaneGeometry(20, 20, 10, 10);
+            const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+            floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = floorHeight;
+            scene.add(floor);
+
+            // Racket (Circle)
+            const racketGeometry = new THREE.CircleGeometry(racketRadius, 32);
+            const racketMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            racket = new THREE.Mesh(racketGeometry, racketMaterial);
+            racket.position.set(0, floorHeight + racketRadius, 0); // Start racket at center
+            racket.rotation.x = -Math.PI / 2; // Face racket upward
+            scene.add(racket);
+
+            // Camera Position
+            camera.position.z = 10;
+            camera.position.y = 3;
+
+            // Lighting
+            const light = new THREE.PointLight(0xffffff, 1, 100);
+            light.position.set(0, 5, 5);
+            scene.add(light);
+
+            // Resize Event Listener
+            window.addEventListener('resize', onWindowResize);
+
+            // Drag Controls
+            renderer.domElement.addEventListener('mousedown', () => isDragging = true);
+            renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+            renderer.domElement.addEventListener('mousemove', (event) => handleRacketMovement(event));
+            renderer.domElement.addEventListener('touchstart', () => isDragging = true);
+            renderer.domElement.addEventListener('touchend', () => isDragging = false);
+            renderer.domElement.addEventListener('touchmove', (event) => handleRacketMovement(event));
+        }
+
+        // Handle Racket Movement
+        function handleRacketMovement(event) {
+            if (!isDragging) return;
+
+            let clientX, clientY;
+            if (event.touches) {
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            } else {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
+
+            // Convert screen coordinates to world coordinates
+            const rect = renderer.domElement.getBoundingClientRect();
+            const mouseX = (clientX - rect.left) / rect.width * 2 - 1; // Normalize to [-1, 1]
+            const mouseY = -(clientY - rect.top) / rect.height * 2 + 1; // Normalize to [-1, 1]
+
+            const vector = new THREE.Vector3(mouseX, mouseY, 0.5).unproject(camera);
+            const direction = vector.sub(camera.position).normalize();
+            const distance = (floorHeight + racketRadius - camera.position.y) / direction.y;
+            const position = camera.position.clone().add(direction.multiplyScalar(distance));
+
+            racket.position.x = position.x;
+            racket.position.z = position.z;
+        }
+
+        // Ball Class
+        class Ball {
+            constructor() {
+                const geometry = new THREE.SphereGeometry(ballRadius);
+                const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.set(Math.random() * 10 - 5, 5, Math.random() * 10 - 5);
+                this.velocity = new THREE.Vector3(0, -0.1, 0);  // Initial velocity
+                scene.add(this.mesh);
+            }
+
+            update() {
+                if (gameOver) return;
+
+                // Apply gravity to the ball
+                this.velocity.y += gravity;
+
+                // Update ball position based on its velocity
+                this.mesh.position.add(this.velocity);
+
+                // Ball Collision with Floor (Grid)
+                if (this.mesh.position.y <= floorHeight + ballRadius) {
+                    this.velocity.y *= -0.9;  // Bounce off the floor with some energy loss
+                    this.mesh.position.y = floorHeight + ballRadius; // Correct position
+                }
+
+                // Ball Collision with Racket
+                const distance = this.mesh.position.distanceTo(racket.position);
+                if (distance <= racketRadius + ballRadius && this.mesh.position.y <= racket.position.y + ballRadius) {
+                    this.velocity.y *= -1.1;  // Reflect with more force
+                    this.velocity.x += Math.random() * 0.2 - 0.1; // Randomize X
+                    this.velocity.z += Math.random() * 0.2 - 0.1; // Randomize Z
+                    score++;
+                }
+
+                // Ball Lost Below Floor
+                if (this.mesh.position.y <= floorHeight - ballRadius) {
+                    lives--;
+                    this.reset();
+                    if (lives <= 0) gameOverScreen();
+                }
+            }
+
+            reset() {
+                this.mesh.position.set(Math.random() * 10 - 5, 5, Math.random() * 10 - 5);
+                this.velocity.set(0, -0.1, 0);
+            }
+        }
+
+        // Game Over Screen
+        function gameOverScreen() {
+            gameOver = true;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        // Restart the Game
+        function restartGame() {
+            lives = 3;
+            score = 0;
+            level = 1;
+            gameOver = false;
+            balls.forEach(ball => scene.remove(ball.mesh));
+            balls = [];
+            document.getElementById('gameOver').style.display = 'none';
+            for (let i = 0; i < level; i++) balls.push(new Ball());
+        }
+
+        // Window Resize Handler
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Main Animation Loop
+        function animate() {
+            if (gameOver) return;
+
+            requestAnimationFrame(animate);
+            balls.forEach(ball => ball.update());
+            renderer.render(scene, camera);
+        }
+
+        // Spawn New Balls
+        setInterval(() => {
+            if (!gameOver) balls.push(new Ball());
+        }, 3000);
+    </script>
+</body>
+</html>
