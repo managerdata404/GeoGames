@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tectonic Forces Simulation</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            border: 1px solid black;
+            margin-top: 20px;
+        }
+        button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tectonic Forces Simulation</h1>
+    <div>
+        <button onclick="applyForce('compression')">Compression</button>
+        <button onclick="applyForce('tension')">Tension</button>
+        <button onclick="applyForce('shear')">Shear</button>
+        <button onclick="applyForce('combination')">Combination</button>
+        <button onclick="resetSimulation()">Reset</button>
+    </div>
+    <canvas id="tectonicCanvas" width="800" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('tectonicCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let blocks = [];
+        const blockWidth = 100;
+        const blockHeight = 50;
+        const colors = ['#8B4513', '#CD853F', '#D2691E'];
+
+        class Block {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.originalX = x;
+                this.originalY = y;
+                this.deformationX = 0;
+                this.deformationY = 0;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x + this.deformationX, this.y + this.deformationY, blockWidth, blockHeight);
+            }
+
+            update(dx, dy) {
+                this.x += dx;
+                this.y += dy;
+            }
+
+            deform(dx, dy) {
+                this.deformationX += dx;
+                this.deformationY += dy;
+            }
+
+            reset() {
+                this.x = this.originalX;
+                this.y = this.originalY;
+                this.deformationX = 0;
+                this.deformationY = 0;
+            }
+        }
+
+        function initBlocks() {
+            blocks = [];
+            for (let i = 0; i < 8; i++) {
+                blocks.push(new Block(i * blockWidth, canvas.height / 2 - blockHeight / 2, colors[i % colors.length]));
+            }
+        }
+
+        function drawBlocks() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            blocks.forEach(block => block.draw());
+        }
+
+        function drawArrows(forceType) {
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            if (forceType === 'compression' || forceType === 'tension') {
+                let direction = forceType === 'compression' ? 1 : -1;
+                for (let i = 0; i < blocks.length / 2; i++) {
+                    let startX = blocks[i].x + blockWidth / 2;
+                    let endX = startX + direction * 50;
+                    ctx.moveTo(startX, blocks[i].y + blockHeight / 2);
+                    ctx.lineTo(endX, blocks[i].y + blockHeight / 2);
+                    ctx.moveTo(endX, blocks[i].y + blockHeight / 2 - 5);
+                    ctx.lineTo(endX, blocks[i].y + blockHeight / 2 + 5);
+
+                    startX = blocks[blocks.length - 1 - i].x + blockWidth / 2;
+                    endX = startX - direction * 50;
+                    ctx.moveTo(startX, blocks[blocks.length - 1 - i].y + blockHeight / 2);
+                    ctx.lineTo(endX, blocks[blocks.length - 1 - i].y + blockHeight / 2);
+                    ctx.moveTo(endX, blocks[blocks.length - 1 - i].y + blockHeight / 2 - 5);
+                    ctx.lineTo(endX, blocks[blocks.length - 1 - i].y + blockHeight / 2 + 5);
+                }
+            } else if (forceType === 'shear' || forceType === 'combination') {
+                for (let i = 0; i < blocks.length; i++) {
+                    let direction = i % 2 === 0 ? 1 : -1;
+                    let startX = blocks[i].x + blockWidth / 2;
+                    let startY = blocks[i].y + blockHeight / 2;
+                    let endX = startX + direction * 50;
+                    let endY = startY + direction * 50;
+
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.moveTo(endX - 5, endY - 5);
+                    ctx.lineTo(endX + 5, endY + 5);
+                    ctx.moveTo(endX + 5, endY - 5);
+                    ctx.lineTo(endX - 5, endY + 5);
+                }
+            }
+
+            ctx.stroke();
+        }
+
+        function applyForce(forceType) {
+            if (forceType === 'compression') {
+                for (let i = 0; i < blocks.length / 2; i++) {
+                    blocks[i].update(5, 0);
+                    blocks[blocks.length - 1 - i].update(-5, 0);
+                    blocks[i].deform(2, 0);
+                    blocks[blocks.length - 1 - i].deform(-2, 0);
+                }
+            } else if (forceType === 'tension') {
+                for (let i = 0; i < blocks.length / 2; i++) {
+                    blocks[i].update(-5, 0);
+                    blocks[blocks.length - 1 - i].update(5, 0);
+                    blocks[i].deform(-2, 0);
+                    blocks[blocks.length - 1 - i].deform(2, 0);
+                }
+            } else if (forceType === 'shear') {
+                for (let i = 0; i < blocks.length; i++) {
+                    if (i % 2 === 0) {
+                        blocks[i].update(5, 5);
+                        blocks[i].deform(0, 2);
+                    } else {
+                        blocks[i].update(-5, -5);
+                        blocks[i].deform(0, -2);
+                    }
+                }
+            } else if (forceType === 'combination') {
+                for (let i = 0; i < blocks.length / 2; i++) {
+                    blocks[i].update(-5, 5);
+                    blocks[blocks.length - 1 - i].update(5, -5);
+                    blocks[i].deform(-2, 2);
+                    blocks[blocks.length - 1 - i].deform(2, -2);
+                }
+            }
+
+            drawBlocks();
+            drawArrows(forceType);
+        }
+
+        function resetSimulation() {
+            blocks.forEach(block => block.reset());
+            drawBlocks();
+        }
+
+        initBlocks();
+        drawBlocks();
+    </script>
+</body>
+</html>
