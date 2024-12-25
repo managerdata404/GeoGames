@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Markerless Stratigraphy AR</title>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-aframe.prod.js"></script>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <!-- MindAR Scene -->
+    <a-scene mindar-image="imageTargetSrc: ./target.mind; autoStart: true; uiScanning: false;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
+
+      <!-- Anchor for Markerless Tracking -->
+      <a-camera position="0 0 0" look-controls></a-camera>
+      <a-entity mindar-image-target="targetIndex: 0">
+        
+        <!-- Stratigraphic Layers -->
+        <a-box position="0 0 -2" width="3" height="0.5" depth="3" color="#8B4513"></a-box> <!-- Basement -->
+        <a-box position="0 0.5 -2" width="3" height="0.5" depth="3" color="#F4A460"></a-box> <!-- Sandstone -->
+        <a-box position="0 1 -2" width="3" height="0.5" depth="3" color="#A9A9A9"></a-box> <!-- Shale -->
+        <a-box position="0 1.5 -2" width="3" height="0.5" depth="3" color="#D8BFD8"></a-box> <!-- Limestone -->
+        <a-box position="0 2 -2" width="3" height="0.5" depth="3" color="#32CD32"></a-box> <!-- Top Soil -->
+
+        <!-- Fault Line -->
+        <a-cylinder id="fault-line" position="0 1 -1.8" radius="0.05" height="2.5" color="#000000"></a-cylinder>
+
+        <!-- Fault Button -->
+        <a-plane id="fault-btn" position="0 -1 -1.5" width="1.5" height="0.5" color="#007BFF" text="value: Simulate Fault; color: white;"></a-plane>
+      </a-entity>
+    </a-scene>
+
+    <!-- JavaScript for Fault Movement -->
+    <script>
+      const btn = document.querySelector("#fault-btn");
+      const faultLine = document.querySelector("#fault-line");
+      let isFaultActive = false;
+
+      btn.addEventListener("click", () => {
+        if (!isFaultActive) {
+          faultLine.setAttribute("position", { x: 0.5, y: 1, z: -1.8 });
+          document.querySelectorAll("a-box").forEach((box, index) => {
+            if (index > 2) {
+              let pos = box.getAttribute("position");
+              box.setAttribute("position", { x: pos.x + 0.5, y: pos.y, z: pos.z });
+            }
+          });
+          isFaultActive = true;
+        } else {
+          faultLine.setAttribute("position", { x: 0, y: 1, z: -1.8 });
+          document.querySelectorAll("a-box").forEach((box, index) => {
+            if (index > 2) {
+              let pos = box.getAttribute("position");
+              box.setAttribute("position", { x: pos.x - 0.5, y: pos.y, z: pos.z });
+            }
+          });
+          isFaultActive = false;
+        }
+      });
+    </script>
+  </body>
+</html>
