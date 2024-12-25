@@ -4,7 +4,7 @@ Welcome to the Geosciences Gaming Website repository! This project is dedicated 
 
 ## Overview
 
-Geosciences cover a vast array of topics, including geology, meteorology, oceanography, and environmental science. This gaming platform aims to make learning about these subjects fun and interactive by incorporating educational games that challenge and entertain.
+Geosciences cover a vast array of topics, including geology, geophysics, meteorology, oceanography, and environmental science. This gaming platform aims to make learning about these subjects fun and interactive by incorporating educational games that challenge and entertain.
 
 ## Features
 
