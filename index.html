@@ -13,8 +13,6 @@
             padding: 0;
             box-sizing: border-box;
             background: #f7f9fc;
-            height: 100%;
-            overflow-x: hidden; /* Prevent horizontal scrolling */
         }
 
         /* Sidebar */
@@ -38,7 +36,6 @@
             padding: 1em 1.5em;
             color: white;
             text-decoration: none;
-            font-size: 1em;
             transition: 0.3s;
         }
         .sidebar a:hover {
@@ -63,13 +60,13 @@
 
         /* Main Content */
         main {
-            padding: 2em;
+            padding: 1.5em;
         }
 
-        /* Title Bar */
+        /* Title Bar - Reduced Size */
         h1 {
-            font-size: 2em;
-            padding: 1em;
+            font-size: 1.5em; /* Reduced size */
+            padding: 0.5em; /* Reduced padding */
             text-align: center;
             background: linear-gradient(135deg, #007BFF, #00BFFF);
             color: white;
@@ -78,21 +75,22 @@
         }
 
         section {
-            margin-bottom: 2em;
-            padding: 1.5em;
+            margin-bottom: 1.5em;
+            padding: 1em;
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
+
         section h2 {
-            font-size: 1.2em;
+            font-size: 1.1em; /* Adjusted font size */
             color: #007BFF;
             margin-bottom: 1em;
         }
 
         /* Game List */
         .game-category h3 {
-            font-size: 1.1em;
+            font-size: 1em;
             color: #007BFF;
         }
         .game-list {
@@ -100,8 +98,8 @@
             padding: 0;
         }
         .game-list li {
-            padding: 0.8em 1em;
-            margin-bottom: 0.8em;
+            padding: 0.5em 1em;
+            margin-bottom: 0.5em;
             border: 1px solid #ddd;
             border-radius: 6px;
         }
@@ -116,7 +114,7 @@
             padding: 0.5em 1em;
             border-radius: 5px;
             cursor: pointer;
-            display: none; /* Hidden initially */
+            display: none;
             z-index: 1001;
         }
 
@@ -128,13 +126,6 @@
             color: white;
             border-radius: 8px;
             margin-top: 2em;
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 200px;
-            }
         }
     </style>
 </head>
@@ -172,10 +163,14 @@
                 <ul class="game-list">
                     <li><a href="game1.html">Rock Identification Challenge</a></li>
                     <li><a href="game2.html">Weather Pattern Puzzle</a></li>
+                    <li><a href="game3.html">Mineral Matching Game</a></li>
+                    <li><a href="game4.html">Seismic Waves Simulator</a></li>
                 </ul>
                 <h3>3D Games</h3>
                 <ul class="game-list">
-                    <li><a href="game3.html">Ocean Currents Adventure</a></li>
+                    <li><a href="game5.html">Ocean Currents Adventure</a></li>
+                    <li><a href="game6.html">Volcano Exploration</a></li>
+                    <li><a href="game7.html">Fault Line Mapping</a></li>
                 </ul>
             </div>
         </section>
