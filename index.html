@@ -12,9 +12,9 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            height: 100vh;
-            display: flex;
             background: #f7f9fc;
+            height: 100%;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
         }
 
         /* Sidebar */
@@ -45,13 +45,6 @@
             background: rgba(255, 255, 255, 0.2);
             padding-left: 2em;
         }
-        .sidebar h3 {
-            padding-left: 1.5em;
-            margin: 1em 0 0.5em;
-            font-size: 1.2em;
-            color: #fff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-        }
 
         /* Toggle Button */
         .toggle-btn {
@@ -70,15 +63,18 @@
 
         /* Main Content */
         main {
-            flex-grow: 1;
-            margin-left: 0;
             padding: 2em;
         }
 
+        /* Title Bar */
         h1 {
             font-size: 2em;
+            padding: 1em;
+            text-align: center;
+            background: linear-gradient(135deg, #007BFF, #00BFFF);
+            color: white;
+            border-radius: 8px;
             margin-bottom: 1em;
-            color: #007BFF;
         }
 
         section {
@@ -89,7 +85,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         section h2 {
-            font-size: 1.3em; /* Smaller title */
+            font-size: 1.2em;
             color: #007BFF;
             margin-bottom: 1em;
         }
@@ -121,6 +117,7 @@
             border-radius: 5px;
             cursor: pointer;
             display: none; /* Hidden initially */
+            z-index: 1001;
         }
 
         /* Footer */
@@ -130,6 +127,7 @@
             background: linear-gradient(135deg, #007BFF, #00BFFF);
             color: white;
             border-radius: 8px;
+            margin-top: 2em;
         }
 
         /* Mobile Responsive */
@@ -144,15 +142,9 @@
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-        <h3>Menu</h3>
         <a href="#about">About</a>
         <a href="#games">Games</a>
         <a href="#contact">Contact</a>
-        <h3>Categories</h3>
-        <a href="#2d-games">2D Games</a>
-        <a href="#3d-games">3D Games</a>
-        <a href="#vr-games">VR Games</a>
-        <h3>More</h3>
         <a href="#faq">FAQ</a>
         <a href="#blog">Blog</a>
         <a href="#news">News</a>
@@ -166,7 +158,7 @@
 
     <!-- Main Content -->
     <main>
-        <h1>Welcome to Geosciences Gaming</h1>
+        <h1>Geosciences Gaming</h1>
 
         <section id="about">
             <h2>About Us</h2>
@@ -175,16 +167,12 @@
 
         <section id="games">
             <h2>Our Games</h2>
-            
-            <div class="game-category" id="2d-games">
+            <div class="game-category">
                 <h3>2D Games</h3>
                 <ul class="game-list">
                     <li><a href="game1.html">Rock Identification Challenge</a></li>
                     <li><a href="game2.html">Weather Pattern Puzzle</a></li>
                 </ul>
-            </div>
-
-            <div class="game-category" id="3d-games">
                 <h3>3D Games</h3>
                 <ul class="game-list">
                     <li><a href="game3.html">Ocean Currents Adventure</a></li>
@@ -192,6 +180,10 @@
             </div>
         </section>
     </main>
+
+    <footer>
+        &copy; 2024 Geosciences Gaming. All Rights Reserved.
+    </footer>
 
     <script>
         const toggleBtn = document.getElementById('toggle-btn');
