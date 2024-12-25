@@ -27,6 +27,7 @@
             transition: transform 0.3s ease-in-out;
             box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
             padding-top: 1em;
+            z-index: 1000;
         }
         .sidebar.hide {
             transform: translateX(-250px);
@@ -36,7 +37,7 @@
             padding: 1em 1.5em;
             color: white;
             text-decoration: none;
-            font-size: 1.1em;
+            font-size: 1em;
             transition: 0.3s;
         }
         .sidebar a:hover {
@@ -46,7 +47,7 @@
 
         /* Toggle Button */
         .toggle-btn {
-            position: absolute;
+            position: fixed;
             top: 15px;
             left: 260px;
             cursor: pointer;
@@ -57,6 +58,7 @@
             border-radius: 5px;
             font-size: 1em;
             transition: 0.3s;
+            z-index: 1001;
         }
         .toggle-btn:hover {
             background: #0056b3;
@@ -73,22 +75,28 @@
             margin-left: 0;
         }
 
+        h1 {
+            font-size: 2em;
+            margin-bottom: 1em;
+            color: #007BFF;
+        }
+
         section {
             margin-bottom: 2em;
-            padding: 2em;
+            padding: 1.5em;
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         section h2 {
-            font-size: 1.8em;
+            font-size: 1.5em; /* Smaller title */
             color: #007BFF;
             margin-bottom: 1em;
         }
 
         /* Game List */
         .game-category h3 {
-            font-size: 1.4em;
+            font-size: 1.2em;
             color: #007BFF;
         }
         .game-list {
@@ -160,25 +168,45 @@
 
     <!-- Main Content -->
     <main>
+        <h1>Welcome to Geosciences Gaming</h1>
+
         <section id="about">
             <h2>About Us</h2>
-            <p>Welcome to Geosciences Gaming – making science fun and interactive through games!</p>
+            <p>Explore fun and educational games about geology, meteorology, and environmental science!</p>
         </section>
 
         <section id="games">
-            <h2>Games</h2>
+            <h2>Our Games</h2>
+            
             <div class="game-category">
                 <h3>2D Games</h3>
                 <ul class="game-list">
-                    <li>🌋 <a href="game1.html">Rock Identification</a></li>
-                    <li>☁️ <a href="game2.html">Weather Puzzle</a></li>
+                    <li>🌋 <a href="game1.html">Rock Identification Challenge</a></li>
+                    <li>☁️ <a href="game2.html">Weather Pattern Puzzle</a></li>
+                    <li>🌍 <a href="game5.html">Environmental Impact Quiz</a></li>
+                </ul>
+            </div>
+
+            <div class="game-category">
+                <h3>3D Games</h3>
+                <ul class="game-list">
+                    <li>🌊 <a href="game3.html">Ocean Currents Adventure</a></li>
+                    <li>🏠 <a href="game4.html">Earthquake Simulator</a></li>
+                </ul>
+            </div>
+
+            <div class="game-category">
+                <h3>VR Games</h3>
+                <ul class="game-list">
+                    <li>🔥 <a href="game6.html">Volcano Eruption Experience</a></li>
+                    <li>🌡️ <a href="game7.html">Climate Change Explorer</a></li>
                 </ul>
             </div>
         </section>
 
         <section id="contact">
-            <h2>Contact</h2>
-            <p>Email us at <a href="mailto:email@example.com">email@example.com</a></p>
+            <h2>Contact Us</h2>
+            <p>Email us at <a href="mailto:email@example.com">email@example.com</a>.</p>
         </section>
 
         <footer>
