@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Area Conservation Simulation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      margin: 10px auto;
+      border: 1px solid #ccc;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    button {
+      padding: 10px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #007BFF;
+      color: white;
+    }
+
+    button:active {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h2>Area Conservation Simulation</h2>
+  <canvas id="canvas"></canvas>
+  <div class="controls">
+    <button id="runFull">Run Full Simulation</button>
+    <button id="splitTriangles">Split into Triangles</button>
+    <button id="formDodecagon">Form Dodecagon</button>
+    <button id="showOriginal">Show Original Geometries</button>
+    <button id="reset">Reset</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth * 0.9;
+    canvas.height = window.innerHeight * 0.6;
+
+    const R = 80; // Radius scaled for mobile
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    let state = "boxes";
+    let step = 0;
+
+    const gridSize = 4; // 4x4 grid for each box to form triangles
+
+    let boxes = [
+      { x: centerX - 1.5 * R, y: centerY - R, color: "red" },
+      { x: centerX - 0.5 * R, y: centerY - R, color: "green" },
+      { x: centerX + 0.5 * R, y: centerY - R, color: "blue" },
+    ];
+
+    function drawGrid() {
+      ctx.strokeStyle = "#ddd";
+      for (let x = 0; x < canvas.width; x += 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawLabels(areaText) {
+      ctx.fillStyle = "black";
+      ctx.font = "16px Arial";
+      ctx.fillText(`Total Area = ${areaText}`, 10, 20);
+    }
+
+    function drawBoxes() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      boxes.forEach((box) => {
+        ctx.fillStyle = box.color;
+        ctx.fillRect(box.x, box.y, R, R);
+        ctx.strokeRect(box.x, box.y, R, R);
+      });
+      drawGrid();
+      drawLabels("3R²");
+    }
+
+    function splitToTriangles(callback) {
+      if (state !== "boxes" || step > 0) return;
+      state = "triangles";
+      step = 1;
+
+      let triangles = [];
+      boxes.forEach((box) => {
+        for (let i = 0; i < gridSize; i++) {
+          for (let j = 0; j < gridSize; j++) {
+            let x = box.x + (i * R) / gridSize;
+            let y = box.y + (j * R) / gridSize;
+
+            // Each small triangle with three points
+            let angle1 = ((i + j) * Math.PI) / 4;
+            let angle2 = ((i + j + 1) * Math.PI) / 4;
+
+            triangles.push({
+              x: x,
+              y: y,
+              points: [
+                { x: box.x + R / 2, y: box.y + R / 2 },
+                {
+                  x: box.x + R / 2 + Math.cos(angle1) * R / gridSize,
+                  y: box.y + R / 2 + Math.sin(angle1) * R / gridSize,
+                },
+                {
+                  x: box.x + R / 2 + Math.cos(angle2) * R / gridSize,
+                  y: box.y + R / 2 + Math.sin(angle2) * R / gridSize,
+                },
+              ],
+              color: box.color,
+            });
+          }
+        }
+      });
+
+      animateTransition(triangles, "3R²", callback || (() => drawLabels("3R²")));
+    }
+
+    function formDodecagon(callback) {
+      if (state !== "triangles" || step > 1) return;
+      state = "dodecagon";
+      step = 2;
+
+      let dodecagon = [];
+      for (let i = 0; i < 12; i++) {
+        let angle1 = (i * Math.PI) / 6;
+        let angle2 = ((i + 1) * Math.PI) / 6;
+
+        dodecagon.push({
+          points: [
+            { x: centerX, y: centerY },
+            {
+              x: centerX + Math.cos(angle1) * R,
+              y: centerY + Math.sin(angle1) * R,
+            },
+            {
+              x: centerX + Math.cos(angle2) * R,
+              y: centerY + Math.sin(angle2) * R,
+            },
+          ],
+          color: i % 3 === 0 ? "red" : i % 3 === 1 ? "green" : "blue",
+        });
+      }
+
+      animateTransition(dodecagon, "3R²", callback || (() => drawLabels("3R²")));
+    }
+
+    function animateTransition(shapes, areaText, callback) {
+      let steps = 100; // Slow-motion speed
+      let currentStep = 0;
+      const interval = setInterval(() => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+
+        shapes.forEach((shape) => {
+          ctx.fillStyle = shape.color;
+          ctx.beginPath();
+          ctx.moveTo(shape.points[0].x, shape.points[0].y);
+          shape.points.forEach((p) => ctx.lineTo(p.x, p.y));
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        });
+
+        drawLabels(areaText);
+
+        // Adding rotation and movement during the transition
+        shapes.forEach((shape, index) => {
+          shape.points.forEach((point) => {
+            point.x += Math.sin(currentStep / 10 + index) * 2;
+            point.y += Math.cos(currentStep / 10 + index) * 2;
+          });
+        });
+
+        currentStep++;
+        if (currentStep >= steps) {
+          clearInterval(interval);
+          callback();
+        }
+      }, 30); // Slow down the animation
+    }
+
+    function runFullSimulation() {
+      splitToTriangles(() => formDodecagon());
+    }
+
+    function resetSimulation() {
+      step = 0;
+      state = "boxes";
+      drawBoxes();
+    }
+
+    function showOriginalGeometries() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+
+      // Draw 3 boxes
+      boxes.forEach((box) => {
+        ctx.fillStyle = box.color;
+        ctx.fillRect(box.x, box.y, R, R);
+        ctx.strokeRect(box.x, box.y, R, R);
+      });
+
+      // Draw triangles inside one box
+      let box = boxes[0]; // Use the first box
+      const triangleColor = "orange";
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          let x = box.x + (i * R) / gridSize;
+          let y = box.y + (j * R) / gridSize;
+
+          ctx.fillStyle = triangleColor;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + R / gridSize, y);
+          ctx.lineTo(x, y + R / gridSize);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+
+      // Draw dodecagon
+      const dodecagonColor = "purple";
+      ctx.fillStyle = dodecagonColor;
+      ctx.beginPath();
+      for (let i = 0; i < 12; i++) {
+        let angle = (i * Math.PI) / 6;
+        let x = centerX + Math.cos(angle) * R;
+        let y = centerY + Math.sin(angle) * R;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      drawLabels("3R²");
+    }
+    document.getElementById("runFull").addEventListener("click", runFullSimulation);
+    document.getElementById("splitTriangles").addEventListener("click", splitToTriangles);
+    document.getElementById("formDodecagon").addEventListener("click", formDodecagon);
+    document.getElementById("reset").addEventListener("click", resetSimulation);
+
+document.getElementById("showOriginal").addEventListener("click", showOriginalGeometries);
+
+    drawBoxes();
+  </script>
+</body>
+</html>
