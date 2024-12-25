@@ -14,48 +14,85 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            background-color: #f0f8ff;
-            color: #333;
-            display: flex;
             height: 100vh;
+            display: flex;
+            overflow: hidden;
         }
 
         /* Sidebar Navigation */
-        nav {
-            width: 220px;
+        .sidebar {
+            width: 250px;
+            height: 100%;
             background-color: #1E90FF;
             color: white;
-            padding: 1.5em 0;
             position: fixed;
-            height: 100%;
+            transition: transform 0.3s ease;
             box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
         }
-        nav h1 {
-            font-size: 1.5em;
-            margin: 0;
+        .sidebar.hide {
+            transform: translateX(-250px);
+        }
+        .sidebar h1 {
             text-align: center;
-            padding-bottom: 1em;
+            font-size: 1.5em;
+            padding: 1em 0;
             border-bottom: 1px solid #ffffff55;
         }
-        nav a {
+        .sidebar a {
             display: block;
             padding: 1em 1.5em;
             color: white;
             font-weight: 500;
-            font-size: 1.1em;
             text-decoration: none;
             transition: background 0.3s ease;
         }
-        nav a:hover {
+        .sidebar a:hover {
             background-color: #007BFF;
+        }
+
+        /* Toggle Button */
+        .toggle-btn {
+            position: absolute;
+            top: 10px;
+            left: 260px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            padding: 0.5em 1em;
+            border-radius: 5px;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: 0.3s ease;
+        }
+        .toggle-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Header */
+        header {
+            width: 100%;
+            background-color: #1E90FF;
+            color: white;
+            padding: 1em;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            z-index: 500;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         /* Main Content */
         main {
-            margin-left: 220px;
+            margin-left: 250px;
+            margin-top: 60px;
             padding: 2em;
             flex-grow: 1;
             overflow-y: auto;
+            transition: margin-left 0.3s ease;
+        }
+        .sidebar.hide + main {
+            margin-left: 0;
         }
 
         section {
@@ -71,7 +108,7 @@
             margin-bottom: 1em;
         }
 
-        /* Game Categories */
+        /* Game List */
         .game-category h3 {
             font-size: 1.4em;
             color: #0056b3;
@@ -97,33 +134,35 @@
             padding: 1em;
             background-color: #1E90FF;
             color: white;
-            font-size: 0.9em;
             border-radius: 8px;
             margin-top: 2em;
         }
 
-        /* Responsive Design */
+        /* Mobile Responsive */
         @media (max-width: 768px) {
-            nav {
-                width: 180px;
+            .sidebar {
+                width: 200px;
+            }
+            .sidebar.hide {
+                transform: translateX(-200px);
             }
             main {
-                margin-left: 180px;
+                margin-left: 200px;
+            }
+            .sidebar.hide + main {
+                margin-left: 0;
+            }
+            .toggle-btn {
+                left: 210px;
             }
         }
 
         @media (max-width: 480px) {
-            nav {
-                width: 100%;
-                height: auto;
-                position: relative;
-            }
-            nav h1 {
-                padding: 0.5em;
-            }
             main {
                 margin-left: 0;
-                padding: 1em;
+            }
+            .toggle-btn {
+                left: 10px;
             }
         }
     </style>
@@ -131,59 +170,53 @@
 <body>
 
     <!-- Sidebar Navigation -->
-    <nav>
+    <div class="sidebar" id="sidebar">
         <h1>Geosciences Gaming</h1>
         <a href="#about">About</a>
         <a href="#games">Games</a>
         <a href="#contact">Contact</a>
-    </nav>
+    </div>
+
+    <!-- Toggle Button -->
+    <button class="toggle-btn" id="toggle-btn">☰ Menu</button>
+
+    <!-- Header -->
+    <header>
+        <h2>Geosciences Gaming - Learn Through Play</h2>
+    </header>
 
     <!-- Main Content -->
     <main>
         <section id="about">
             <h2>About Us</h2>
-            <p>Welcome to the Geosciences Gaming Website! We provide engaging and interactive learning experiences through games focused on geosciences topics. Learn geology, meteorology, and environmental science in a fun and accessible way.</p>
+            <p>Engaging and interactive games to learn geology, meteorology, and more.</p>
         </section>
 
         <section id="games">
-            <h2>Our Games</h2>
-            
-            <div class="game-category">
-                <h3>2D Games</h3>
-                <ul class="game-list">
-                    <li>🌋 <a href="game1.html">Rock Identification Challenge</a></li>
-                    <li>☁️ <a href="game2.html">Weather Pattern Puzzle</a></li>
-                    <li>🌍 <a href="game5.html">Environmental Impact Quiz</a></li>
-                </ul>
-            </div>
-
-            <div class="game-category">
-                <h3>3D Games</h3>
-                <ul class="game-list">
-                    <li>🌊 <a href="game3.html">Ocean Currents Adventure</a></li>
-                    <li>🏠 <a href="game4.html">Earthquake Simulator</a></li>
-                </ul>
-            </div>
-
-            <div class="game-category">
-                <h3>VR Games</h3>
-                <ul class="game-list">
-                    <li>🔥 <a href="game6.html">Volcano Eruption Experience</a></li>
-                    <li>🌡️ <a href="game7.html">Climate Change Explorer</a></li>
-                </ul>
-            </div>
+            <h2>Games</h2>
+            <ul class="game-list">
+                <li>🌋 <a href="game1.html">Rock Challenge</a></li>
+                <li>☁️ <a href="game2.html">Weather Puzzle</a></li>
+            </ul>
         </section>
 
         <section id="contact">
-            <h2>Contact Us</h2>
-            <p>Have questions or feedback? Reach out to us at <a href="mailto:email@example.com">email@example.com</a>. We’d love to hear from you!</p>
+            <h2>Contact</h2>
+            <p>email@example.com</p>
         </section>
 
-        <!-- Footer -->
         <footer>
-            <p>&copy; 2024 Geosciences Gaming. All rights reserved.</p>
+            &copy; 2024 Geosciences Gaming
         </footer>
     </main>
+
+    <script>
+        const toggleBtn = document.getElementById('toggle-btn');
+        const sidebar = document.getElementById('sidebar');
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('hide');
+        });
+    </script>
 
 </body>
 </html>
