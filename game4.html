@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Geological Deformation Simulation</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      touch-action: none;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+      background: #f8f8f8;
+    }
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="compressButton">Compressional</button>
+    <button id="extendButton">Extensional</button>
+  </div>
+  <canvas id="geologyCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('geologyCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Resize canvas to fit screen size
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Layer properties
+    const layers = [];
+    const layerHeight = 30;
+    const numLayers = 12;
+    const rainbowColors = [
+      '#FF0000', '#FF7F00', '#FFFF00', '#7FFF00', '#00FF00',
+      '#00FF7F', '#00FFFF', '#007FFF', '#0000FF', '#7F00FF',
+      '#FF00FF', '#FF007F'
+    ];
+
+    // Initialize layers
+    for (let i = 0; i < numLayers; i++) {
+      layers.push({
+        y: canvas.height - (i + 1) * layerHeight,
+        thickness: layerHeight,
+        deformation: 0,
+      });
+    }
+
+    // Deformation variables
+    let t = 0;
+    let deformationAmount = 0;
+    let deformationSpeed = 0.5;
+    let deformationMode = 'compressional'; // Default mode
+
+    // Buttons for deformation modes
+    document.getElementById('compressButton').addEventListener('click', () => {
+      deformationMode = 'compressional';
+    });
+
+    document.getElementById('extendButton').addEventListener('click', () => {
+      deformationMode = 'extensional';
+    });
+
+    function drawLayers() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      layers.forEach((layer, index) => {
+        // Fill layers with rainbow colors
+        ctx.fillStyle = rainbowColors[index % rainbowColors.length];
+        ctx.beginPath();
+
+        // Deformation calculations based on mode
+        let points = [];
+        for (let x = 0; x <= canvas.width; x += 10) {
+          let dx = (x / canvas.width - 0.5) * 2; // Normalize from -1 to 1
+          let deformEffect;
+
+          if (deformationMode === 'compressional') {
+            // Force from left and right to center
+            deformEffect = Math.sin(t + dx * Math.PI) * deformationAmount * Math.abs(dx);
+          } else if (deformationMode === 'extensional') {
+            // Force from center outward to left and right
+            deformEffect = Math.sin(t - dx * Math.PI) * deformationAmount * (1 - Math.abs(dx));
+          }
+
+          points.push({
+            x: x,
+            y: layer.y + deformEffect,
+          });
+        }
+
+        // Draw the deformed layer
+        ctx.moveTo(points[0].x, points[0].y);
+        points.forEach((point) => {
+          ctx.lineTo(point.x, point.y);
+        });
+        ctx.lineTo(canvas.width, layer.y + layer.thickness);
+        ctx.lineTo(0, layer.y + layer.thickness);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw black deformation lines
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        points.forEach((point, i) => {
+          if (i > 0) {
+            ctx.lineTo(point.x, point.y);
+          } else {
+            ctx.moveTo(point.x, point.y);
+          }
+        });
+        ctx.stroke();
+      });
+    }
+
+    function update() {
+      t += deformationSpeed;
+
+      // Control deformation limits
+      if (deformationMode === 'compressional') {
+        deformationAmount += 0.2;
+        if (deformationAmount > 30) deformationAmount = 30; // Limit compression
+      } else if (deformationMode === 'extensional') {
+        deformationAmount -= 0.2;
+        if (deformationAmount < -30) deformationAmount = -30; // Limit extension
+      }
+
+      drawLayers();
+      requestAnimationFrame(update);
+    }
+
+    // Start the simulation
+    update();
+  </script>
+</body>
+</html>
