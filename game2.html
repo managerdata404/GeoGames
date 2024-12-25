@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Space Shooting Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+    }
+    canvas {
+      display: block;
+    }
+    #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      text-align: center;
+      display: none;
+    }
+    #game-over h1 {
+      font-size: 3em;
+      margin: 0.5em;
+    }
+    #game-over button {
+      padding: 10px 20px;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="game-over">
+    <h1>Game Over</h1>
+    <p id="final-score">Your Score: 0</p>
+    <button onclick="restartGame()">Restart</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const shooterIcons = ["🚀", "🛸", "🛰️", "🛶"];
+    const alienIcons = ["👾", "👽", "🤖", "🛸", "🌟"];
+    const backgroundElements = [
+      { x: 100, y: 150, text: "🌕" },
+      { x: canvas.width - 150, y: 100, text: "🪐" },
+      { x: canvas.width / 2, y: 300, text: "✨" },
+      { x: 300, y: canvas.height - 200, text: "🌌" },
+      { x: canvas.width - 200, y: canvas.height - 250, text: "🌟" },
+    ];
+
+    let shooter = {
+      x: canvas.width / 2,
+      y: canvas.height - 100,
+      size: 50,
+      lives: 10,
+      level: 1,
+      appearance: shooterIcons[0],
+    };
+    let bullets = [];
+    let aliens = [];
+    let score = 0;
+    let level = 1;
+    let explosions = [];
+    let gameOver = false;
+
+    function createAlien() {
+      const isRare = Math.random() < 0.1; // Rare alien chance
+      const alienIcon = alienIcons[Math.floor(Math.random() * alienIcons.length)];
+      aliens.push({
+        x: Math.random() * canvas.width,
+        y: -50,
+        size: isRare ? 60 : 40,
+        speed: level + Math.random(),
+        isRare,
+        icon: isRare ? "🌟" : alienIcon,
+      });
+    }
+
+    function drawShooter() {
+      ctx.font = `${shooter.size}px Arial`;
+      ctx.textAlign = "center";
+      ctx.fillStyle = "white";
+      ctx.fillText(shooter.appearance, shooter.x, shooter.y);
+    }
+
+    function drawBullets() {
+      ctx.fillStyle = "yellow";
+      bullets.forEach(bullet => {
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawAliens() {
+      aliens.forEach(alien => {
+        ctx.font = `${alien.size}px Arial`;
+        ctx.textAlign = "center";
+        ctx.fillStyle = alien.isRare ? "gold" : "white";
+        ctx.fillText(alien.icon, alien.x, alien.y);
+      });
+    }
+
+    function drawExplosions() {
+      explosions.forEach((explosion, index) => {
+        if (explosion.timer > 0) {
+          // Draw the explosion visual
+          const gradient = ctx.createRadialGradient(explosion.x, explosion.y, 0, explosion.x, explosion.y, 30);
+          gradient.addColorStop(0, "yellow");
+          gradient.addColorStop(1, "red");
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(explosion.x, explosion.y, 30, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Add "Boom!" text for the explosion sound effect
+          ctx.fillStyle = "white";
+          ctx.font = "20px Arial";
+          ctx.fillText("Boom!", explosion.x, explosion.y - 40);
+
+          explosion.timer--;
+        } else {
+          explosions.splice(index, 1); // Remove expired explosions
+        }
+      });
+    }
+
+    function drawBackground() {
+      backgroundElements.forEach(element => {
+        ctx.font = "100px Arial";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+        ctx.fillText(element.text, element.x, element.y);
+      });
+    }
+
+    function updateGame() {
+      if (gameOver) return;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw background
+      drawBackground();
+
+      // Move and draw bullets
+      bullets = bullets.filter(bullet => bullet.y > 0);
+      bullets.forEach(bullet => bullet.y -= 10);
+
+      // Move and draw aliens
+      aliens.forEach(alien => {
+        alien.y += alien.speed;
+        if (alien.y > canvas.height) shooter.lives--;
+      });
+
+      // Check collisions
+      bullets.forEach((bullet, bIndex) => {
+        aliens.forEach((alien, aIndex) => {
+          const dist = Math.hypot(bullet.x - alien.x, bullet.y - alien.y);
+          if (dist < alien.size / 2) {
+            score += alien.isRare ? 50 : 10;
+            if (alien.isRare) shooter.lives++;
+            explosions.push({ x: alien.x, y: alien.y, timer: 30 }); // Add explosion
+            aliens.splice(aIndex, 1);
+            bullets.splice(bIndex, 1);
+          }
+        });
+      });
+
+      // Remove off-screen aliens
+      aliens = aliens.filter(alien => alien.y < canvas.height);
+
+      // Update level and difficulty
+      if (score >= level * 200) {
+        level++;
+        shooter.appearance = shooterIcons[(level - 1) % shooterIcons.length];
+      }
+
+      // End game if lives reach zero
+      if (shooter.lives <= 0) {
+        gameOver = true;
+        document.getElementById('game-over').style.display = 'block';
+        document.getElementById('final-score').textContent = `Your Score: ${score}`;
+        return;
+      }
+
+      // Draw everything
+      drawShooter();
+      drawBullets();
+      drawAliens();
+      drawExplosions();
+
+      // Draw UI
+      ctx.fillStyle = "white";
+      ctx.font = "20px Arial";
+      ctx.fillText(`Score: ${score}`, 10, 30);
+      ctx.fillText(`Lives: ${shooter.lives}`, 10, 60);
+      ctx.fillText(`Level: ${level}`, 10, 90);
+
+      requestAnimationFrame(updateGame);
+    }
+
+    function shootBullet() {
+      bullets.push({ x: shooter.x, y: shooter.y - 20 });
+    }
+
+    function restartGame() {
+      gameOver = false;
+      score = 0;
+      level = 1;
+      shooter.lives = 10;
+      shooter.appearance = shooterIcons[0];
+      bullets = [];
+      aliens = [];
+      explosions = [];
+      document.getElementById('game-over').style.display = 'none';
+      updateGame();
+    }
+
+    canvas.addEventListener('mousemove', e => {
+      shooter.x = e.clientX;
+      shooter.y = e.clientY;
+    });
+
+    canvas.addEventListener('click', shootBullet);
+
+    setInterval(createAlien, 1000);
+
+    updateGame();
+  </script>
+</body>
+</html>
