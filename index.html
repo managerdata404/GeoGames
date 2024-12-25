@@ -14,75 +14,66 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            background-color: #f0f8ff; /* Light Blue */
+            background-color: #f0f8ff;
             color: #333;
-            line-height: 1.6;
-        }
-        h1, h2, h3 {
-            margin: 0;
-        }
-        a {
-            text-decoration: none;
-            color: #007BFF;
-            transition: color 0.3s ease;
-        }
-        a:hover {
-            color: #0056b3;
+            display: flex;
+            height: 100vh;
         }
 
-        /* Header */
-        header {
-            background-color: #007BFF; /* Blue */
+        /* Sidebar Navigation */
+        nav {
+            width: 220px;
+            background-color: #1E90FF;
             color: white;
             padding: 1.5em 0;
+            position: fixed;
+            height: 100%;
+            box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
+        }
+        nav h1 {
+            font-size: 1.5em;
+            margin: 0;
             text-align: center;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        header h1 {
-            font-size: 2.5em;
-            font-weight: 700;
-        }
-
-        /* Navigation */
-        nav {
-            display: flex;
-            justify-content: center;
-            gap: 2em;
-            padding: 1em 0;
-            background-color: #f0f8ff;
-            border-bottom: 1px solid #ddd;
+            padding-bottom: 1em;
+            border-bottom: 1px solid #ffffff55;
         }
         nav a {
-            font-size: 1.1em;
+            display: block;
+            padding: 1em 1.5em;
+            color: white;
             font-weight: 500;
+            font-size: 1.1em;
+            text-decoration: none;
+            transition: background 0.3s ease;
+        }
+        nav a:hover {
+            background-color: #007BFF;
         }
 
-        /* Sections */
+        /* Main Content */
+        main {
+            margin-left: 220px;
+            padding: 2em;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
         section {
-            max-width: 1100px;
-            margin: 2em auto;
+            margin-bottom: 2em;
             padding: 2em;
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         section h2 {
-            margin-bottom: 1em;
-            font-size: 1.8em;
-            font-weight: 700;
             color: #007BFF;
-        }
-        section p {
-            font-size: 1.1em;
+            font-size: 1.8em;
+            margin-bottom: 1em;
         }
 
         /* Game Categories */
-        .game-category {
-            margin-top: 2em;
-        }
         .game-category h3 {
             font-size: 1.4em;
-            margin-bottom: 1em;
             color: #0056b3;
         }
         .game-list {
@@ -103,85 +94,96 @@
         /* Footer */
         footer {
             text-align: center;
-            padding: 1.5em 0;
-            background-color: #007BFF;
+            padding: 1em;
+            background-color: #1E90FF;
             color: white;
             font-size: 0.9em;
+            border-radius: 8px;
+            margin-top: 2em;
         }
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            header h1 {
-                font-size: 2em;
-            }
             nav {
-                flex-direction: column;
-                align-items: center;
+                width: 180px;
             }
-            section {
-                padding: 1.5em;
+            main {
+                margin-left: 180px;
             }
-            .game-list li {
-                font-size: 1em;
+        }
+
+        @media (max-width: 480px) {
+            nav {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            nav h1 {
+                padding: 0.5em;
+            }
+            main {
+                margin-left: 0;
+                padding: 1em;
             }
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Geosciences Gaming</h1>
-        <p>Explore Geology, Oceanography, and Earth Science Through Fun and Games!</p>
-    </header>
-
+    <!-- Sidebar Navigation -->
     <nav>
+        <h1>Geosciences Gaming</h1>
         <a href="#about">About</a>
         <a href="#games">Games</a>
         <a href="#contact">Contact</a>
     </nav>
 
-    <section id="about">
-        <h2>About Us</h2>
-        <p>Welcome to the Geosciences Gaming Website! We provide engaging and interactive learning experiences through games focused on geosciences topics. Learn geology, meteorology, and environmental science in a fun and accessible way.</p>
-    </section>
+    <!-- Main Content -->
+    <main>
+        <section id="about">
+            <h2>About Us</h2>
+            <p>Welcome to the Geosciences Gaming Website! We provide engaging and interactive learning experiences through games focused on geosciences topics. Learn geology, meteorology, and environmental science in a fun and accessible way.</p>
+        </section>
 
-    <section id="games">
-        <h2>Our Games</h2>
-        
-        <div class="game-category">
-            <h3>2D Games</h3>
-            <ul class="game-list">
-                <li>🌋 <a href="game1.html">Rock Identification Challenge</a></li>
-                <li>☁️ <a href="game2.html">Weather Pattern Puzzle</a></li>
-                <li>🌍 <a href="game5.html">Environmental Impact Quiz</a></li>
-            </ul>
-        </div>
+        <section id="games">
+            <h2>Our Games</h2>
+            
+            <div class="game-category">
+                <h3>2D Games</h3>
+                <ul class="game-list">
+                    <li>🌋 <a href="game1.html">Rock Identification Challenge</a></li>
+                    <li>☁️ <a href="game2.html">Weather Pattern Puzzle</a></li>
+                    <li>🌍 <a href="game5.html">Environmental Impact Quiz</a></li>
+                </ul>
+            </div>
 
-        <div class="game-category">
-            <h3>3D Games</h3>
-            <ul class="game-list">
-                <li>🌊 <a href="game3.html">Ocean Currents Adventure</a></li>
-                <li>🏠 <a href="game4.html">Earthquake Simulator</a></li>
-            </ul>
-        </div>
+            <div class="game-category">
+                <h3>3D Games</h3>
+                <ul class="game-list">
+                    <li>🌊 <a href="game3.html">Ocean Currents Adventure</a></li>
+                    <li>🏠 <a href="game4.html">Earthquake Simulator</a></li>
+                </ul>
+            </div>
 
-        <div class="game-category">
-            <h3>VR Games</h3>
-            <ul class="game-list">
-                <li>🔥 <a href="game6.html">Volcano Eruption Experience</a></li>
-                <li>🌡️ <a href="game7.html">Climate Change Explorer</a></li>
-            </ul>
-        </div>
-    </section>
+            <div class="game-category">
+                <h3>VR Games</h3>
+                <ul class="game-list">
+                    <li>🔥 <a href="game6.html">Volcano Eruption Experience</a></li>
+                    <li>🌡️ <a href="game7.html">Climate Change Explorer</a></li>
+                </ul>
+            </div>
+        </section>
 
-    <section id="contact">
-        <h2>Contact Us</h2>
-        <p>Have questions or feedback? Reach out to us at <a href="mailto:email@example.com">email@example.com</a>. We’d love to hear from you!</p>
-    </section>
+        <section id="contact">
+            <h2>Contact Us</h2>
+            <p>Have questions or feedback? Reach out to us at <a href="mailto:email@example.com">email@example.com</a>. We’d love to hear from you!</p>
+        </section>
 
-    <footer>
-        <p>&copy; 2024 Geosciences Gaming. All rights reserved.</p>
-    </footer>
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2024 Geosciences Gaming. All rights reserved.</p>
+        </footer>
+    </main>
 
 </body>
 </html>
