@@ -1,23 +1,23 @@
-# Subsurface Simulation in the Era of AI
+# Geosciences Gaming Website
 
-Welcome to the Subsurface Simulation eLearning repository! This project is dedicated to providing high-quality educational resources and simulation tools for subsurface geological modeling, leveraging the latest advancements in artificial intelligence (AI).
+Welcome to the Geosciences Gaming Website repository! This project is dedicated to providing an engaging and interactive learning experience through games focused on geosciences.
 
 ## Overview
 
-Subsurface simulation is a critical aspect of understanding geological formations, fluid flow, and reservoir management. In the era of AI, we have the opportunity to enhance these simulations with greater accuracy, efficiency, and predictive capabilities. This eLearning platform aims to bridge the gap between theoretical knowledge and practical application by offering interactive simulations, tutorials, and resources that incorporate AI technologies.
+Geosciences cover a vast array of topics, including geology, meteorology, oceanography, and environmental science. This gaming platform aims to make learning about these subjects fun and interactive by incorporating educational games that challenge and entertain.
 
 ## Features
 
-- **AI-Powered Simulations**: Engage with realistic subsurface models enhanced with AI to visualize and analyze geological formations and fluid flow with unprecedented detail.
-- **Interactive Tutorials and Guides**: Step-by-step instructions and video tutorials to help you understand the fundamentals of subsurface simulation and how AI is revolutionizing the field.
-- **Case Studies and Real-World Applications**: Explore real-world applications and case studies to see how subsurface simulation and AI are used in various industries, including oil and gas, environmental science, and more.
-- **Community Support and Collaboration**: Join a community of learners and experts to share knowledge, ask questions, and collaborate on projects. Benefit from a network of professionals dedicated to advancing subsurface simulation through AI.
-- **Resource Library**: Access a comprehensive library of articles, research papers, and other resources to deepen your understanding of subsurface simulation and AI.
+- **Educational Games**: Engage with games designed to teach various geosciences concepts, from rock formations to weather patterns and beyond.
+- **Interactive Quizzes**: Test your knowledge with interactive quizzes that reinforce learning and provide instant feedback.
+- **Visual Simulations**: Explore visual simulations that demonstrate geosciences phenomena in an easy-to-understand format.
+- **Community Challenges**: Participate in community challenges and compete with others to see who can achieve the highest scores and master the concepts.
+- **Resource Library**: Access a library of articles, videos, and other resources to deepen your understanding of geosciences.
 
 ## Getting Started
 
-To get started with this eLearning platform, follow these steps:
+To get started with this gaming platform, follow these steps:
 
 1. **Clone the Repository**: Download the repository to your local machine.
    ```bash
-   git clone https://github.com/<your-username>/subsurface-simulation-elearning.git
+   git clone https://github.com/<your-username>/geosciences-gaming-website.git
