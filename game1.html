@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Wild Hunt</title>
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #c6e2ff; /* Daytime sky */
+}
+
+#game-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+.beast {
+  position: absolute;
+  font-size: 50px;
+  color: #333;
+  text-align: center;
+  transition: transform 1s ease-in-out;
+}
+
+.projectile {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ff0000;
+  transition: transform 0.5s ease-in-out;
+}
+
+.explosion {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 0, 0, 1) 0%, rgba(255, 0, 0, 0) 100%);
+  opacity: 1;
+  transition: all 0.5s ease-in-out;
+}
+
+#ui {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+}
+</style>
+</head>
+<body>
+
+<div id="game-container"></div>
+<div id="ui">
+  Score: <span id="score">0</span>
+  Lives: <span id="lives">10</span>
+  Level: <span id="level">1</span>
+</div>
+
+<script>
+const gameContainer = document.getElementById('game-container');
+const scoreDisplay = document.getElementById('score');
+const livesDisplay = document.getElementById('lives');
+const levelDisplay = document.getElementById('level');
+
+let score = 0;
+let lives = 10;
+let level = 1;
+let beasts = [];
+let projectiles = [];
+let explosions = [];
+let gameInterval;
+let beastSpawnInterval;
+let beastSpeed = 0.5; 
+let projectileSpeed = 5;
+let isGameOver = false;
+
+const beastTypes = ['🦁', '🐯', '🐺', '🐘', '🐍', '🦒', '🦄', '🐉'];
+const rareBeasts = ['🦄', '🐉'];
+
+function createBeast() {
+  const beast = document.createElement('div');
+  beast.classList.add('beast');
+  const randomX = Math.random() * (gameContainer.clientWidth - 50);
+  beast.style.left = randomX + 'px';
+  beast.textContent = getRandomBeast();
+  beast.style.top = 0; // Start beasts at the top
+  gameContainer.appendChild(beast);
+  beasts.push({
+    element: beast,
+    y: 0,
+  });
+}
+
+function getRandomBeast() {
+  const randomIndex = Math.floor(Math.random() * beastTypes.length);
+  return beastTypes[randomIndex];
+}
+
+function createProjectile(x, y) {
+  const projectile = document.createElement('div');
+  projectile.classList.add('projectile');
+  projectile.style.left = x + 'px';
+  projectile.style.top = y + 'px';
+  gameContainer.appendChild(projectile);
+  projectiles.push({
+    element: projectile,
+    x: x,
+    y: y,
+    dx: 0,
+    dy: -projectileSpeed, // Move projectiles upwards
+  });
+}
+
+function createExplosion(x, y) {
+  const explosion = document.createElement('div');
+  explosion.classList.add('explosion');
+  explosion.style.left = x + 'px';
+  explosion.style.top = y + 'px';
+  gameContainer.appendChild(explosion);
+  explosions.push(explosion);
+  setTimeout(() => {
+    explosion.remove();
+    const index = explosions.indexOf(explosion);
+    explosions.splice(index, 1);
+  }, 500);
+}
+
+function handleProjectileMovement() {
+  projectiles.forEach((projectile, index) => {
+    projectile.x += projectile.dx;
+    projectile.y += projectile.dy;
+
+    // Curve projectiles after level 4
+    if (level >= 4) {
+      projectile.dx += 0.1;
+    }
+
+    projectile.element.style.left = projectile.x + 'px';
+    projectile.element.style.top = projectile.y + 'px';
+
+    if (projectile.y < 0) { // Remove projectiles that go off-screen
+      projectile.element.remove();
+      projectiles.splice(index, 1);
+    }
+  });
+}
+
+function handleBeastMovement() {
+  beasts.forEach((beast, index) => {
+    beast.y += beastSpeed;
+    beast.element.style.top = beast.y + 'px'; 
+
+    if (beast.y > gameContainer.clientHeight) { 
+      beast.element.remove();
+      beasts.splice(index, 1);
+      lives--;
+      livesDisplay.textContent = lives;
+
+      if (lives === 0) {
+        gameOver();
+      }
+    }
+  });
+}
+
+function checkCollisions() {
+  beasts.forEach((beast) => {
+    projectiles.forEach((projectile, projectileIndex) => {
+      const beastRect = beast.element.getBoundingClientRect();
+      const projectileRect = projectile.element.getBoundingClientRect();
+
+      if (
+        projectileRect.left < beastRect.right &&
+        projectileRect.right > beastRect.left &&
+        projectileRect.top < beastRect.bottom &&
+        projectileRect.bottom > beastRect.top
+      ) {
+        projectile.element.remove();
+        projectiles.splice(projectileIndex, 1);
+        createExplosion(beastRect.left, beastRect.top);
+
+        if (rareBeasts.includes(beast.element.textContent)) {
+          score += 50;
+          lives++;
+          livesDisplay.textContent = lives;
+        } else {
+          score += 10;
+        }
+
+        scoreDisplay.textContent = score;
+
+        if (score >= 200) {
+          level++;
+          levelDisplay.textContent = level;
+          beastSpeed += 0.1;
+          clearInterval(beastSpawnInterval);
+          beastSpawnInterval = setInterval(createBeast, 1000 / level);
+        }
+
+        beast.element.remove();
+        const beastIndex = beasts.indexOf(beast);
+        beasts.splice(beastIndex, 1);
+      }
+    });
+  });
+}
+
+function gameLoop() {
+  handleBeastMovement();
+  handleProjectileMovement();
+  checkCollisions();
+}
+
+function gameOver() {
+  clearInterval(gameInterval);
+  clearInterval(beastSpawnInterval);
+  isGameOver = true;
+  alert('Game Over! Your score: ' + score);
+}
+
+function startGame() {
+  if (!isGameOver) {
+    gameInterval = setInterval(gameLoop, 16);
+    beastSpawnInterval = setInterval(createBeast, 1000);
+  }
+}
+
+// Event listeners
+gameContainer.addEventListener('click', (event) => {
+  createProjectile(event.clientX, event.clientY);
+});
+
+gameContainer.addEventListener('touchstart', (event) => {
+  createProjectile(event.touches[0].clientX, event.touches[0].clientY);
+});
+
+startGame();
+</script>
+</body>
+</html>
