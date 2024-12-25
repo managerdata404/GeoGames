@@ -1,102 +1,137 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geosciences Gaming Website</title>
+    <title>Geosciences Gaming - Learn Through Play</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        /* General Styles */
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            box-sizing: border-box;
+            background-color: #f0f8ff; /* Light Blue */
             color: #333;
+            line-height: 1.6;
         }
+        h1, h2, h3 {
+            margin: 0;
+        }
+        a {
+            text-decoration: none;
+            color: #007BFF;
+            transition: color 0.3s ease;
+        }
+        a:hover {
+            color: #0056b3;
+        }
+
+        /* Header */
         header {
-            background-color: #1E90FF; /* Dodger Blue */
+            background-color: #007BFF; /* Blue */
             color: white;
             padding: 1.5em 0;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
+        header h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        /* Navigation */
         nav {
-            text-align: center;
-            margin: 1.5em 0;
+            display: flex;
+            justify-content: center;
+            gap: 2em;
+            padding: 1em 0;
+            background-color: #f0f8ff;
+            border-bottom: 1px solid #ddd;
         }
         nav a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #1E90FF;
-            font-weight: bold;
             font-size: 1.1em;
+            font-weight: 500;
         }
+
+        /* Sections */
         section {
-            max-width: 900px;
+            max-width: 1100px;
             margin: 2em auto;
             padding: 2em;
             background-color: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
-        footer {
-            text-align: center;
-            padding: 1em 0;
-            background-color: #1E90FF;
-            color: white;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
+        section h2 {
+            margin-bottom: 1em;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #007BFF;
         }
-        .game-list {
-            list-style-type: none;
-            padding: 0;
+        section p {
+            font-size: 1.1em;
         }
-        .game-list li {
-            margin: 1.5em 0;
-        }
-        .game-list a {
-            text-decoration: none;
-            color: #1E90FF;
-            font-size: 1.2em;
-        }
+
+        /* Game Categories */
         .game-category {
             margin-top: 2em;
         }
+        .game-category h3 {
+            font-size: 1.4em;
+            margin-bottom: 1em;
+            color: #0056b3;
+        }
+        .game-list {
+            list-style: none;
+            padding: 0;
+        }
+        .game-list li {
+            padding: 0.8em 1em;
+            margin-bottom: 0.8em;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            transition: box-shadow 0.3s ease;
+        }
+        .game-list li:hover {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 1.5em 0;
+            background-color: #007BFF;
+            color: white;
+            font-size: 0.9em;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+            nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            section {
+                padding: 1.5em;
+            }
+            .game-list li {
+                font-size: 1em;
+            }
+        }
     </style>
-<!--
-    ----------------------------------------------------------------------------
-    "SAVE ALL THE ANIMALS":
-    managerdata404 wrote this file. As long as you retain this notice, you can do
-    whatever you want with this stuff. If you use or distribute this software
-    in any form, you are encouraged to support animal welfare initiatives
-    in any way you can. Save all the animals!
-    ----------------------------------------------------------------------------
-
-    Copyright (c) 2024 managerdata404@gmail.com
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO, THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
--->
 </head>
 <body>
 
     <header>
-        <h1>Geosciences Gaming Website</h1>
+        <h1>Geosciences Gaming</h1>
+        <p>Explore Geology, Oceanography, and Earth Science Through Fun and Games!</p>
     </header>
 
     <nav>
@@ -107,7 +142,7 @@
 
     <section id="about">
         <h2>About Us</h2>
-        <p>Welcome to the Geosciences Gaming Website! We provide engaging and interactive learning experiences through games focused on various geosciences topics. Our goal is to make learning about geology, meteorology, oceanography, and environmental science fun and accessible for everyone.</p>
+        <p>Welcome to the Geosciences Gaming Website! We provide engaging and interactive learning experiences through games focused on geosciences topics. Learn geology, meteorology, and environmental science in a fun and accessible way.</p>
     </section>
 
     <section id="games">
@@ -118,15 +153,15 @@
             <ul class="game-list">
                 <li>🌋 <a href="game1.html">Rock Identification Challenge</a></li>
                 <li>☁️ <a href="game2.html">Weather Pattern Puzzle</a></li>
-                <li>🌍 <a href="game3.html">Environmental Impact Quiz</a></li>
+                <li>🌍 <a href="game5.html">Environmental Impact Quiz</a></li>
             </ul>
         </div>
 
         <div class="game-category">
             <h3>3D Games</h3>
             <ul class="game-list">
-                <li>🌊 <a href="game4.html">Ocean Currents Adventure</a></li>
-                <li>🏠 <a href="game5.html">Earthquake Simulator</a></li>
+                <li>🌊 <a href="game3.html">Ocean Currents Adventure</a></li>
+                <li>🏠 <a href="game4.html">Earthquake Simulator</a></li>
             </ul>
         </div>
 
@@ -145,7 +180,7 @@
     </section>
 
     <footer>
-        <p>&copy; 2024 Geosciences Gaming Website. All rights reserved.</p>
+        <p>&copy; 2024 Geosciences Gaming. All rights reserved.</p>
     </footer>
 
 </body>
