@@ -24,13 +24,14 @@
             background: linear-gradient(135deg, #007BFF, #00BFFF);
             color: white;
             position: fixed;
+            transform: translateX(-250px); /* Hidden by default */
             transition: transform 0.3s ease-in-out;
             box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
             padding-top: 1em;
             z-index: 1000;
         }
-        .sidebar.hide {
-            transform: translateX(-250px);
+        .sidebar.show {
+            transform: translateX(0);
         }
         .sidebar a {
             display: block;
@@ -44,12 +45,19 @@
             background: rgba(255, 255, 255, 0.2);
             padding-left: 2em;
         }
+        .sidebar h3 {
+            padding-left: 1.5em;
+            margin: 1em 0 0.5em;
+            font-size: 1.2em;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
 
         /* Toggle Button */
         .toggle-btn {
             position: fixed;
             top: 15px;
-            left: 260px;
+            left: 15px;
             cursor: pointer;
             background: #007BFF;
             color: white;
@@ -57,22 +65,14 @@
             border: none;
             border-radius: 5px;
             font-size: 1em;
-            transition: 0.3s;
             z-index: 1001;
-        }
-        .toggle-btn:hover {
-            background: #0056b3;
         }
 
         /* Main Content */
         main {
             flex-grow: 1;
-            margin-left: 250px;
-            padding: 2em;
-            transition: margin-left 0.3s ease-in-out;
-        }
-        .sidebar.hide + main {
             margin-left: 0;
+            padding: 2em;
         }
 
         h1 {
@@ -89,14 +89,14 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         section h2 {
-            font-size: 1.5em; /* Smaller title */
+            font-size: 1.3em; /* Smaller title */
             color: #007BFF;
             margin-bottom: 1em;
         }
 
         /* Game List */
         .game-category h3 {
-            font-size: 1.2em;
+            font-size: 1.1em;
             color: #007BFF;
         }
         .game-list {
@@ -108,10 +108,6 @@
             margin-bottom: 0.8em;
             border: 1px solid #ddd;
             border-radius: 6px;
-            transition: box-shadow 0.3s ease;
-        }
-        .game-list li:hover {
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         /* Footer */
@@ -121,35 +117,12 @@
             background: linear-gradient(135deg, #007BFF, #00BFFF);
             color: white;
             border-radius: 8px;
-            margin-top: 2em;
         }
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .sidebar {
                 width: 200px;
-            }
-            .sidebar.hide {
-                transform: translateX(-200px);
-            }
-            main {
-                margin-left: 200px;
-            }
-            .sidebar.hide + main {
-                margin-left: 0;
-            }
-            .toggle-btn {
-                left: 210px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            main {
-                margin-left: 0;
-                padding: 1em;
-            }
-            .toggle-btn {
-                left: 10px;
             }
         }
     </style>
@@ -158,9 +131,18 @@
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
+        <h3>Menu</h3>
         <a href="#about">About</a>
         <a href="#games">Games</a>
         <a href="#contact">Contact</a>
+        <h3>Categories</h3>
+        <a href="#2d-games">2D Games</a>
+        <a href="#3d-games">3D Games</a>
+        <a href="#vr-games">VR Games</a>
+        <h3>More</h3>
+        <a href="#faq">FAQ</a>
+        <a href="#blog">Blog</a>
+        <a href="#news">News</a>
     </div>
 
     <!-- Toggle Button -->
@@ -178,28 +160,25 @@
         <section id="games">
             <h2>Our Games</h2>
             
-            <div class="game-category">
+            <div class="game-category" id="2d-games">
                 <h3>2D Games</h3>
                 <ul class="game-list">
                     <li>🌋 <a href="game1.html">Rock Identification Challenge</a></li>
                     <li>☁️ <a href="game2.html">Weather Pattern Puzzle</a></li>
-                    <li>🌍 <a href="game5.html">Environmental Impact Quiz</a></li>
                 </ul>
             </div>
 
-            <div class="game-category">
+            <div class="game-category" id="3d-games">
                 <h3>3D Games</h3>
                 <ul class="game-list">
                     <li>🌊 <a href="game3.html">Ocean Currents Adventure</a></li>
-                    <li>🏠 <a href="game4.html">Earthquake Simulator</a></li>
                 </ul>
             </div>
 
-            <div class="game-category">
+            <div class="game-category" id="vr-games">
                 <h3>VR Games</h3>
                 <ul class="game-list">
                     <li>🔥 <a href="game6.html">Volcano Eruption Experience</a></li>
-                    <li>🌡️ <a href="game7.html">Climate Change Explorer</a></li>
                 </ul>
             </div>
         </section>
@@ -218,7 +197,7 @@
         const toggleBtn = document.getElementById('toggle-btn');
         const sidebar = document.getElementById('sidebar');
         toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('hide');
+            sidebar.classList.toggle('show');
         });
     </script>
 
