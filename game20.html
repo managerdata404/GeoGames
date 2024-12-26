@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AR Seismic Detection</title>
+    <title>AR Seismic Section Detector</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ar.js/2.2.2/aframe-ar.min.js"></script>
@@ -9,6 +9,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
     <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
         .ui-overlay {
             position: fixed;
             top: 0;
@@ -19,120 +24,161 @@
             z-index: 1000;
         }
 
-        #infoPanel {
+        .status-panel {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 15px;
+            padding: 10px;
             border-radius: 5px;
             text-align: center;
             z-index: 1001;
         }
+
+        .ar-info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 1002;
+        }
     </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
+<body>
     <!-- AR Scene -->
     <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;'>
-        <!-- Camera -->
         <a-entity camera></a-entity>
         
-        <!-- AR Seismic Model -->
+        <!-- AR Content -->
         <a-entity id="seismicModel" visible="false">
             <a-box position="0 0.5 -1" 
                    rotation="0 45 0" 
-                   scale="1 0.2 1" 
-                   material="color: #4B0082">
+                   scale="0.5 0.5 0.5" 
+                   material="color: #FF5733;">
             </a-box>
+            <a-text value="Seismic Section" 
+                    position="0 1 -1" 
+                    scale="0.5 0.5 0.5" 
+                    align="center" 
+                    color="white">
+            </a-text>
         </a-entity>
     </a-scene>
 
     <!-- UI Overlay -->
     <div class="ui-overlay">
-        <div id="infoPanel">Loading model...</div>
+        <div id="statusPanel" class="status-panel">Loading model (0%)...</div>
     </div>
 
-    <!-- TensorFlow.js -->
+    <!-- AR Information -->
+    <div id="arInfo" class="ar-info">
+        <h3>Seismic Section Detected!</h3>
+        <p>Type: Reflection Data<br>
+           Wiggle & Color Section<br>
+           Geology Feature: Stratigraphy</p>
+    </div>
+
+    <!-- JavaScript -->
     <script>
-        let classifier; // KNN Classifier
-        let net;        // MobileNet Model
-        let video;      // Camera Input
+        let net, classifier;
         let isDetecting = false;
-
         const seismicModel = document.getElementById('seismicModel');
-        const infoPanel = document.getElementById('infoPanel');
+        const statusPanel = document.getElementById('statusPanel');
+        const arInfo = document.getElementById('arInfo');
 
+        // Initialize the model
         async function loadModel() {
-            infoPanel.textContent = 'Loading model...';
+            statusPanel.textContent = 'Loading model (0%)...';
 
-            // Load MobileNet and KNN Classifier
-            net = await mobilenet.load();
-            classifier = knnClassifier.create();
-
-            // Train using seismic_texture.jpg
-            const image = document.createElement('img');
-            image.src = 'seismic_texture.jpg';
-            await new Promise(resolve => (image.onload = resolve));
-
-            const logits = net.infer(image, 'conv_preds'); // Extract features
-            classifier.addExample(logits, 0); // Label '0' = Seismic Section
-
-            infoPanel.textContent = 'Model loaded. Point camera at seismic section!';
-        }
-
-        async function setupCamera() {
-            video = document.createElement('video');
-            video.width = 224;
-            video.height = 224;
-
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
-            });
-
-            video.srcObject = stream;
-            await new Promise(resolve => (video.onloadedmetadata = resolve));
-            video.play();
-        }
-
-        async function detectSeismic() {
-            const img = tf.browser.fromPixels(video);
-            const logits = net.infer(img, 'conv_preds'); // Extract features
-            const result = await classifier.predictClass(logits);
-
-            if (result.label === '0') {
-                infoPanel.textContent = 'Seismic Section Detected!';
-                seismicModel.setAttribute('visible', 'true');
-            } else {
-                infoPanel.textContent = 'No seismic section detected.';
-                seismicModel.setAttribute('visible', 'false');
-            }
-
-            img.dispose(); // Free up memory
-
-            if (isDetecting) {
-                requestAnimationFrame(detectSeismic);
-            }
-        }
-
-        async function startDetection() {
-            isDetecting = true;
-            await detectSeismic();
-        }
-
-        async function initAR() {
             try {
-                await loadModel();
-                await setupCamera();
-                startDetection();
+                // Step 1: Load MobileNet Model
+                statusPanel.textContent = 'Loading model (20%)...';
+                net = await mobilenet.load();
+                statusPanel.textContent = 'Loading model (50%)...';
+
+                // Step 2: Create KNN Classifier
+                classifier = knnClassifier.create();
+                statusPanel.textContent = 'Loading model (70%)...';
+
+                // Step 3: Train with seismic_texture.jpg
+                const image = document.createElement('img');
+                image.src = 'seismic_texture.jpg';
+                await new Promise(resolve => (image.onload = resolve));
+                statusPanel.textContent = 'Loading model (90%)...';
+
+                // Step 4: Extract features and train
+                const logits = net.infer(image, 'conv_preds');
+                classifier.addExample(logits, 0); // Label '0' for seismic
+                statusPanel.textContent = 'Loading model (100%)...';
+
+                // Model loaded successfully
+                statusPanel.textContent = 'Model loaded. Point camera at seismic section!';
             } catch (error) {
-                console.error('Initialization Error:', error);
-                infoPanel.textContent = 'Initialization failed. Please refresh.';
+                console.error('Model load error:', error);
+                statusPanel.textContent = 'Failed to load model!';
             }
         }
 
-        window.addEventListener('DOMContentLoaded', initAR);
+        // Start detection
+        async function detectSeismic() {
+            isDetecting = true;
+
+            // Continuously detect while the camera is active
+            const video = document.createElement('video');
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.play();
+
+                    const detectInterval = setInterval(async () => {
+                        if (!isDetecting) {
+                            clearInterval(detectInterval);
+                            return;
+                        }
+
+                        const logits = net.infer(video, 'conv_preds');
+                        const result = await classifier.predictClass(logits);
+
+                        if (result.label === '0') {
+                            // Seismic detected
+                            seismicModel.setAttribute('visible', 'true');
+                            arInfo.style.display = 'block';
+                            statusPanel.textContent = 'Seismic section detected!';
+                        } else {
+                            // No detection
+                            seismicModel.setAttribute('visible', 'false');
+                            arInfo.style.display = 'none';
+                            statusPanel.textContent = 'Searching for seismic section...';
+                        }
+                    }, 500); // Check every 500ms
+                })
+                .catch(error => {
+                    console.error('Camera error:', error);
+                    statusPanel.textContent = 'Camera access denied!';
+                });
+        }
+
+        // Reset detection
+        function resetAR() {
+            isDetecting = false;
+            seismicModel.setAttribute('visible', 'false');
+            arInfo.style.display = 'none';
+            statusPanel.textContent = 'Point camera at seismic section!';
+        }
+
+        // On page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadModel(); // Load model first
+            detectSeismic();  // Start detection
+        });
     </script>
 </body>
 </html>
