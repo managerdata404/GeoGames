@@ -1,93 +1,185 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Geology AR Demo</title>
+    <title>Simple Geology AR</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Include A-Frame and AR.js from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ar.js/2.2.2/aframe-ar.min.js"></script>
     <style>
-        .ar-button {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 999;
-            padding: 10px 20px;
-            background: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        #loading-screen {
+        .ui-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .button {
+            position: fixed;
+            bottom: 20px;
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        #detectButton {
+            left: 20px;
+        }
+
+        #resetButton {
+            right: 20px;
+        }
+
+        #infoPanel {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 1001;
+        }
+
+        .ar-info {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.8);
             color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 1002;
         }
     </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
-    <div id="loading-screen">
-        <div style="text-align: center;">
-            <h2>Loading AR Experience...</h2>
-            <p>Please allow camera access when prompted</p>
-        </div>
-    </div>
-
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;">
-        <!-- Rock formation model -->
-        <a-box position="0 0.5 0" 
-               rotation="0 45 0" 
-               material="color: #8B4513"
-               scale="1 1 1"
-               class="clickable"
-               animation="property: rotation; to: 0 405 0; dur: 10000; easing: linear; loop: true">
-            <a-box position="0.5 0 0" 
-                   scale="0.3 0.8 0.2" 
-                   material="color: #A0522D">
+    <!-- AR Scene -->
+    <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;'>
+        <!-- Camera -->
+        <a-entity camera></a-entity>
+        
+        <!-- AR Content -->
+        <a-entity id="arContent" visible="false">
+            <!-- Rock Formation -->
+            <a-box position="0 0.5 -1" 
+                   rotation="0 45 0" 
+                   scale="0.5 0.5 0.5" 
+                   material="color: #8B4513">
             </a-box>
-            <a-box position="-0.3 0.2 0.3" 
-                   scale="0.2 0.5 0.2" 
-                   material="color: #6B4423">
-            </a-box>
-        </a-box>
-
-        <!-- Marker -->
-        <a-marker-camera preset="hiro"></a-marker-camera>
+            
+            <!-- Information Text -->
+            <a-text value="Rock Formation" 
+                    position="0 1 -1" 
+                    scale="0.5 0.5 0.5" 
+                    align="center" 
+                    color="white">
+            </a-text>
+        </a-entity>
     </a-scene>
 
-    <button class="ar-button" onclick="toggleRotation()">Toggle Rotation</button>
+    <!-- UI Overlay -->
+    <div class="ui-overlay">
+        <div id="infoPanel">Point camera at a surface to start</div>
+        <button id="detectButton" class="button" onclick="toggleDetection()">Start Detection</button>
+        <button id="resetButton" class="button" onclick="resetAR()">Reset</button>
+    </div>
+
+    <!-- AR Information Panels -->
+    <div id="rockInfo" class="ar-info">
+        <h3>Rock Formation Detected!</h3>
+        <p>Type: Sedimentary Rock<br>
+        Age: Approximately 150 million years<br>
+        Composition: Limestone and Minerals</p>
+    </div>
 
     <script>
-        // Hide loading screen when scene is loaded
-        document.querySelector('a-scene').addEventListener('loaded', function () {
-            document.getElementById('loading-screen').style.display = 'none';
+        let isDetecting = false;
+        const arContent = document.getElementById('arContent');
+        const infoPanel = document.getElementById('infoPanel');
+        const rockInfo = document.getElementById('rockInfo');
+        const detectButton = document.getElementById('detectButton');
+
+        // Initialize AR
+        window.addEventListener('camera-init', (data) => {
+            console.log('AR Camera Initialized');
+            infoPanel.textContent = 'Camera Ready - Click Start Detection';
         });
 
-        // Toggle rotation function
-        let isRotating = true;
-        function toggleRotation() {
-            const rock = document.querySelector('a-box');
-            if (isRotating) {
-                rock.removeAttribute('animation');
+        // Handle camera error
+        window.addEventListener('camera-error', (error) => {
+            console.error('Camera Error:', error);
+            infoPanel.textContent = 'Camera Error - Please refresh and try again';
+        });
+
+        function toggleDetection() {
+            isDetecting = !isDetecting;
+            if (isDetecting) {
+                detectButton.textContent = 'Stop Detection';
+                infoPanel.textContent = 'Scanning for geological features...';
+                startDetection();
             } else {
-                rock.setAttribute('animation', 'property: rotation; to: 0 405 0; dur: 10000; easing: linear; loop: true');
+                detectButton.textContent = 'Start Detection';
+                infoPanel.textContent = 'Detection paused';
+                stopDetection();
             }
-            isRotating = !isRotating;
         }
 
-        // Error handling
-        window.addEventListener('camera-error', function(e) {
-            alert('Camera error. Please ensure you have given camera permissions and try again.');
+        function startDetection() {
+            if (!isDetecting) return;
+            
+            // Make AR content visible
+            arContent.setAttribute('visible', 'true');
+            
+            // Show rock information after a short delay
+            setTimeout(() => {
+                if (isDetecting) {
+                    rockInfo.style.display = 'block';
+                    infoPanel.textContent = 'Geological feature detected!';
+                }
+            }, 2000);
+        }
+
+        function stopDetection() {
+            arContent.setAttribute('visible', 'false');
+            rockInfo.style.display = 'none';
+        }
+
+        function resetAR() {
+            isDetecting = false;
+            detectButton.textContent = 'Start Detection';
+            infoPanel.textContent = 'Point camera at a surface to start';
+            stopDetection();
+        }
+
+        // Handle errors and ensure camera access
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                infoPanel.textContent = 'Camera access not available';
+                return;
+            }
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => {
+                    console.log('Camera access granted');
+                    infoPanel.textContent = 'Camera Ready - Click Start Detection';
+                })
+                .catch(error => {
+                    console.error('Camera access denied:', error);
+                    infoPanel.textContent = 'Please enable camera access and refresh';
+                });
         });
     </script>
 </body>
