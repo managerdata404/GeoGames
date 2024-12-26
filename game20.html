@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Seismic AR Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ar.js/2.2.2/aframe-ar.min.js"></script>
+    <style>
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .button {
+            position: fixed;
+            bottom: 20px;
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        #detectButton {
+            left: 20px;
+        }
+
+        #resetButton {
+            right: 20px;
+        }
+
+        #infoPanel {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 1001;
+        }
+
+        .ar-info {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 1002;
+        }
+    </style>
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <!-- AR Scene -->
+    <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;'>
+        <!-- Camera -->
+        <a-entity camera></a-entity>
+        
+        <!-- AR Content for Seismic Section -->
+        <a-entity id="arSeismicContent" visible="false">
+            <!-- Seismic Section Model -->
+            <a-plane position="0 0 -1" 
+                     rotation="-90 0 0" 
+                     width="1.5" 
+                     height="1" 
+                     material="color: gray; src: seismic_texture.jpg;">
+            </a-plane>
+            
+            <!-- Information Text -->
+            <a-text value="Seismic Section" 
+                    position="0 1 -1" 
+                    scale="0.5 0.5 0.5" 
+                    align="center" 
+                    color="yellow">
+            </a-text>
+        </a-entity>
+    </a-scene>
+
+    <!-- UI Overlay -->
+    <div class="ui-overlay">
+        <div id="infoPanel">Point camera at a seismic section to start</div>
+        <button id="detectButton" class="button" onclick="toggleDetection()">Start Detection</button>
+        <button id="resetButton" class="button" onclick="resetAR()">Reset</button>
+    </div>
+
+    <!-- AR Information Panels -->
+    <div id="seismicInfo" class="ar-info">
+        <h3>Seismic Section Detected!</h3>
+        <p>
+            Formation Depth: 2500 - 3000 meters<br>
+            Reflection Data: High Amplitude<br>
+            Potential Reservoir Zones: Identified<br>
+            Lithology: Sandstone and Shale Layers
+        </p>
+    </div>
+
+    <script>
+        let isDetecting = false;
+        const arSeismicContent = document.getElementById('arSeismicContent');
+        const infoPanel = document.getElementById('infoPanel');
+        const seismicInfo = document.getElementById('seismicInfo');
+        const detectButton = document.getElementById('detectButton');
+
+        // Initialize AR
+        window.addEventListener('camera-init', () => {
+            console.log('AR Camera Initialized');
+            infoPanel.textContent = 'Camera Ready - Click Start Detection';
+        });
+
+        // Handle camera errors
+        window.addEventListener('camera-error', (error) => {
+            console.error('Camera Error:', error);
+            infoPanel.textContent = 'Camera Error - Please refresh and try again';
+        });
+
+        function toggleDetection() {
+            isDetecting = !isDetecting;
+            if (isDetecting) {
+                detectButton.textContent = 'Stop Detection';
+                infoPanel.textContent = 'Scanning for seismic features...';
+                startDetection();
+            } else {
+                detectButton.textContent = 'Start Detection';
+                infoPanel.textContent = 'Detection paused';
+                stopDetection();
+            }
+        }
+
+        function startDetection() {
+            if (!isDetecting) return;
+            
+            // Show AR seismic content
+            arSeismicContent.setAttribute('visible', 'true');
+            
+            // Show seismic information after a short delay
+            setTimeout(() => {
+                if (isDetecting) {
+                    seismicInfo.style.display = 'block';
+                    infoPanel.textContent = 'Seismic feature detected!';
+                }
+            }, 2000);
+        }
+
+        function stopDetection() {
+            arSeismicContent.setAttribute('visible', 'false');
+            seismicInfo.style.display = 'none';
+        }
+
+        function resetAR() {
+            isDetecting = false;
+            detectButton.textContent = 'Start Detection';
+            infoPanel.textContent = 'Point camera at a seismic section to start';
+            stopDetection();
+        }
+
+        // Debugging logs
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                infoPanel.textContent = 'Camera access not available';
+                return;
+            }
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => {
+                    console.log('Camera access granted');
+                    infoPanel.textContent = 'Camera Ready - Click Start Detection';
+                })
+                .catch(error => {
+                    console.error('Camera access denied:', error);
+                    infoPanel.textContent = 'Please enable camera access and refresh';
+                });
+        });
+    </script>
+</body>
+</html>
