@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ar.js/2.2.2/aframe-ar.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
     <style>
         .ui-overlay {
             position: fixed;
@@ -16,19 +17,6 @@
             height: 100%;
             pointer-events: none;
             z-index: 1000;
-        }
-
-        .button {
-            position: fixed;
-            bottom: 20px;
-            padding: 12px 24px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            pointer-events: auto;
         }
 
         #infoPanel {
@@ -53,43 +41,45 @@
         
         <!-- AR Seismic Model -->
         <a-entity id="seismicModel" visible="false">
-            <!-- Seismic Layers -->
             <a-box position="0 0.5 -1" 
                    rotation="0 45 0" 
                    scale="1 0.2 1" 
                    material="color: #4B0082">
-            </a-box>
-            <a-box position="0 0.3 -1" 
-                   rotation="0 45 0" 
-                   scale="1 0.2 1" 
-                   material="color: #6A5ACD">
-            </a-box>
-            <a-box position="0 0.1 -1" 
-                   rotation="0 45 0" 
-                   scale="1 0.2 1" 
-                   material="color: #FF4500">
             </a-box>
         </a-entity>
     </a-scene>
 
     <!-- UI Overlay -->
     <div class="ui-overlay">
-        <div id="infoPanel">Point camera at a surface to start</div>
+        <div id="infoPanel">Loading model...</div>
     </div>
 
-    <!-- TensorFlow Model and Detection Script -->
+    <!-- TensorFlow.js -->
     <script>
-        let model;
-        let video;
+        let classifier; // KNN Classifier
+        let net;        // MobileNet Model
+        let video;      // Camera Input
         let isDetecting = false;
 
         const seismicModel = document.getElementById('seismicModel');
         const infoPanel = document.getElementById('infoPanel');
 
         async function loadModel() {
-            infoPanel.textContent = 'Loading AI Model...';
-            model = await mobilenet.load();
-            infoPanel.textContent = 'Model Loaded - Point camera to detect seismic!';
+            infoPanel.textContent = 'Loading model...';
+
+            // Load MobileNet and KNN Classifier
+            net = await mobilenet.load();
+            classifier = knnClassifier.create();
+
+            // Train using seismic_texture.jpg
+            const image = document.createElement('img');
+            image.src = 'seismic_texture.jpg';
+            await new Promise(resolve => (image.onload = resolve));
+
+            const logits = net.infer(image, 'conv_preds'); // Extract features
+            classifier.addExample(logits, 0); // Label '0' = Seismic Section
+
+            infoPanel.textContent = 'Model loaded. Point camera at seismic section!';
         }
 
         async function setupCamera() {
@@ -107,21 +97,19 @@
         }
 
         async function detectSeismic() {
-            const predictions = await model.classify(video);
+            const img = tf.browser.fromPixels(video);
+            const logits = net.infer(img, 'conv_preds'); // Extract features
+            const result = await classifier.predictClass(logits);
 
-            console.log('Predictions:', predictions);
-
-            const result = predictions.find(prediction =>
-                prediction.className.toLowerCase().includes('seismic')
-            );
-
-            if (result) {
+            if (result.label === '0') {
                 infoPanel.textContent = 'Seismic Section Detected!';
                 seismicModel.setAttribute('visible', 'true');
             } else {
-                infoPanel.textContent = 'No seismic section detected!';
+                infoPanel.textContent = 'No seismic section detected.';
                 seismicModel.setAttribute('visible', 'false');
             }
+
+            img.dispose(); // Free up memory
 
             if (isDetecting) {
                 requestAnimationFrame(detectSeismic);
