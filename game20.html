@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Seismic AR Viewer</title>
+    <title>AR Seismic Detection</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ar.js/2.2.2/aframe-ar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <style>
         .ui-overlay {
             position: fixed;
@@ -29,14 +31,6 @@
             pointer-events: auto;
         }
 
-        #detectButton {
-            left: 20px;
-        }
-
-        #resetButton {
-            right: 20px;
-        }
-
         #infoPanel {
             position: fixed;
             top: 20px;
@@ -49,20 +43,6 @@
             text-align: center;
             z-index: 1001;
         }
-
-        .ar-info {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            display: none;
-            z-index: 1002;
-        }
     </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
@@ -71,120 +51,100 @@
         <!-- Camera -->
         <a-entity camera></a-entity>
         
-        <!-- AR Content for Seismic Section -->
-        <a-entity id="arSeismicContent" visible="false">
-            <!-- Seismic Section Model -->
-            <a-plane position="0 0 -1" 
-                     rotation="-90 0 0" 
-                     width="1.5" 
-                     height="1" 
-                     material="color: gray; src: seismic_texture.jpg;">
-            </a-plane>
-            
-            <!-- Information Text -->
-            <a-text value="Seismic Section" 
-                    position="0 1 -1" 
-                    scale="0.5 0.5 0.5" 
-                    align="center" 
-                    color="yellow">
-            </a-text>
+        <!-- AR Seismic Model -->
+        <a-entity id="seismicModel" visible="false">
+            <!-- Seismic Layers -->
+            <a-box position="0 0.5 -1" 
+                   rotation="0 45 0" 
+                   scale="1 0.2 1" 
+                   material="color: #4B0082">
+            </a-box>
+            <a-box position="0 0.3 -1" 
+                   rotation="0 45 0" 
+                   scale="1 0.2 1" 
+                   material="color: #6A5ACD">
+            </a-box>
+            <a-box position="0 0.1 -1" 
+                   rotation="0 45 0" 
+                   scale="1 0.2 1" 
+                   material="color: #FF4500">
+            </a-box>
         </a-entity>
     </a-scene>
 
     <!-- UI Overlay -->
     <div class="ui-overlay">
-        <div id="infoPanel">Point camera at a seismic section to start</div>
-        <button id="detectButton" class="button" onclick="toggleDetection()">Start Detection</button>
-        <button id="resetButton" class="button" onclick="resetAR()">Reset</button>
+        <div id="infoPanel">Point camera at a surface to start</div>
     </div>
 
-    <!-- AR Information Panels -->
-    <div id="seismicInfo" class="ar-info">
-        <h3>Seismic Section Detected!</h3>
-        <p>
-            Formation Depth: 2500 - 3000 meters<br>
-            Reflection Data: High Amplitude<br>
-            Potential Reservoir Zones: Identified<br>
-            Lithology: Sandstone and Shale Layers
-        </p>
-    </div>
-
+    <!-- TensorFlow Model and Detection Script -->
     <script>
+        let model;
+        let video;
         let isDetecting = false;
-        const arSeismicContent = document.getElementById('arSeismicContent');
+
+        const seismicModel = document.getElementById('seismicModel');
         const infoPanel = document.getElementById('infoPanel');
-        const seismicInfo = document.getElementById('seismicInfo');
-        const detectButton = document.getElementById('detectButton');
 
-        // Initialize AR
-        window.addEventListener('camera-init', () => {
-            console.log('AR Camera Initialized');
-            infoPanel.textContent = 'Camera Ready - Click Start Detection';
-        });
+        async function loadModel() {
+            infoPanel.textContent = 'Loading AI Model...';
+            model = await mobilenet.load();
+            infoPanel.textContent = 'Model Loaded - Point camera to detect seismic!';
+        }
 
-        // Handle camera errors
-        window.addEventListener('camera-error', (error) => {
-            console.error('Camera Error:', error);
-            infoPanel.textContent = 'Camera Error - Please refresh and try again';
-        });
+        async function setupCamera() {
+            video = document.createElement('video');
+            video.width = 224;
+            video.height = 224;
 
-        function toggleDetection() {
-            isDetecting = !isDetecting;
-            if (isDetecting) {
-                detectButton.textContent = 'Stop Detection';
-                infoPanel.textContent = 'Scanning for seismic features...';
-                startDetection();
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+
+            video.srcObject = stream;
+            await new Promise(resolve => (video.onloadedmetadata = resolve));
+            video.play();
+        }
+
+        async function detectSeismic() {
+            const predictions = await model.classify(video);
+
+            console.log('Predictions:', predictions);
+
+            const result = predictions.find(prediction =>
+                prediction.className.toLowerCase().includes('seismic')
+            );
+
+            if (result) {
+                infoPanel.textContent = 'Seismic Section Detected!';
+                seismicModel.setAttribute('visible', 'true');
             } else {
-                detectButton.textContent = 'Start Detection';
-                infoPanel.textContent = 'Detection paused';
-                stopDetection();
+                infoPanel.textContent = 'No seismic section detected!';
+                seismicModel.setAttribute('visible', 'false');
+            }
+
+            if (isDetecting) {
+                requestAnimationFrame(detectSeismic);
             }
         }
 
-        function startDetection() {
-            if (!isDetecting) return;
-            
-            // Show AR seismic content
-            arSeismicContent.setAttribute('visible', 'true');
-            
-            // Show seismic information after a short delay
-            setTimeout(() => {
-                if (isDetecting) {
-                    seismicInfo.style.display = 'block';
-                    infoPanel.textContent = 'Seismic feature detected!';
-                }
-            }, 2000);
+        async function startDetection() {
+            isDetecting = true;
+            await detectSeismic();
         }
 
-        function stopDetection() {
-            arSeismicContent.setAttribute('visible', 'false');
-            seismicInfo.style.display = 'none';
-        }
-
-        function resetAR() {
-            isDetecting = false;
-            detectButton.textContent = 'Start Detection';
-            infoPanel.textContent = 'Point camera at a seismic section to start';
-            stopDetection();
-        }
-
-        // Debugging logs
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                infoPanel.textContent = 'Camera access not available';
-                return;
+        async function initAR() {
+            try {
+                await loadModel();
+                await setupCamera();
+                startDetection();
+            } catch (error) {
+                console.error('Initialization Error:', error);
+                infoPanel.textContent = 'Initialization failed. Please refresh.';
             }
+        }
 
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-                .then(stream => {
-                    console.log('Camera access granted');
-                    infoPanel.textContent = 'Camera Ready - Click Start Detection';
-                })
-                .catch(error => {
-                    console.error('Camera access denied:', error);
-                    infoPanel.textContent = 'Please enable camera access and refresh';
-                });
-        });
+        window.addEventListener('DOMContentLoaded', initAR);
     </script>
 </body>
 </html>
