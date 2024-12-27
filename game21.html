@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Geological Structure Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        canvas {
+            background: white;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+        select {
+            padding: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Geological Structure Simulation</h1>
+        <div class="controls">
+            <select id="structureSelect">
+                <option value="thinBeds">Thin Beds</option>
+                <option value="thrustFaults">Thrust Faults</option>
+                <option value="pinchOut">Pinch Out</option>
+                <option value="saltDome">Salt Dome</option>
+                <option value="carbonateWedges">Carbonate Wedges</option>
+                <option value="sigmoidalPattern">Sigmoidal Pattern</option>
+                <option value="toplaps">Toplaps</option>
+                <option value="baselaps">Baselaps</option>
+                <option value="imbricatedStructures">Imbricated Structures</option>
+                <option value="deltaicDeposit">Deltaic Deposit</option>
+                <option value="channelFill">Channel Fill Deposit</option>
+                <option value="reefComplexes">Reef Complexes</option>
+                <option value="volcanicSills">Volcanic Sills and Dikes</option>
+            </select>
+            <button onclick="startSimulation()">Start Simulation</button>
+        </div>
+        <canvas id="canvas" width="800" height="600"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let animationId;
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawThinBeds(time) {
+            clearCanvas();
+            const layers = 10;
+            const layerHeight = canvas.height / layers;
+
+            for (let i = 0; i < layers; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * layerHeight + Math.sin(time/1000 + i) * 10);
+                
+                for (let x = 0; x < canvas.width; x += 10) {
+                    ctx.lineTo(x, i * layerHeight + Math.sin(time/1000 + i + x/100) * 10);
+                }
+                
+                ctx.strokeStyle = `rgb(${100 + i * 10}, ${150 + i * 10}, ${200 + i * 10})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawThrustFaults(time) {
+            clearCanvas();
+            const progress = (time % 5000) / 5000;
+            const offset = progress * 100;
+
+            // Draw layers
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 300 + i * 30);
+                ctx.lineTo(400 - offset, 300 + i * 30);
+                ctx.lineTo(500 - offset, 250 + i * 30);
+                ctx.lineTo(800, 250 + i * 30);
+                ctx.strokeStyle = `rgb(${120 + i * 20}, ${130 + i * 20}, ${140 + i * 20})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawPinchOut(time) {
+            clearCanvas();
+            const progress = (time % 3000) / 3000;
+            
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 200 + i * 50);
+                ctx.quadraticCurveTo(
+                    400, 200 + i * 50 + Math.sin(progress * Math.PI) * 50,
+                    800, 200 + i * 50
+                );
+                ctx.strokeStyle = `rgb(${180 - i * 20}, ${160 - i * 20}, ${140 - i * 20})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawSaltDome(time) {
+            clearCanvas();
+            const progress = (time % 4000) / 4000;
+            const domeHeight = 200 * progress;
+
+            // Draw salt dome
+            ctx.beginPath();
+            ctx.moveTo(300, 600);
+            ctx.quadraticCurveTo(400, 600 - domeHeight, 500, 600);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.strokeStyle = '#cccccc';
+            ctx.stroke();
+
+            // Draw deformed layers
+            for (let i = 0; i < 6; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 300 + i * 50);
+                ctx.quadraticCurveTo(400, 300 + i * 50 - domeHeight/2, 800, 300 + i * 50);
+                ctx.strokeStyle = `rgb(${140 + i * 20}, ${120 + i * 20}, ${100 + i * 20})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawCarbonateWedges(time) {
+            clearCanvas();
+            const progress = (time % 3000) / 3000;
+
+            // Draw platform
+            ctx.beginPath();
+            ctx.moveTo(0, 400);
+            ctx.lineTo(800, 400);
+            ctx.strokeStyle = '#666666';
+            ctx.stroke();
+
+            // Draw wedges
+            for (let i = 0; i < 5; i++) {
+                const wedgeHeight = 100 * (1 - i/5) * progress;
+                ctx.beginPath();
+                ctx.moveTo(100 + i * 150, 400);
+                ctx.lineTo(200 + i * 150, 400 - wedgeHeight);
+                ctx.lineTo(300 + i * 150, 400);
+                ctx.fillStyle = `rgba(200, 200, 200, ${0.8 - i/6})`;
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        function drawSigmoidalPattern(time) {
+            clearCanvas();
+            const progress = (time % 4000) / 4000;
+
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 200 + i * 50);
+                
+                for (let x = 0; x < canvas.width; x += 10) {
+                    const y = 200 + i * 50 + 
+                        Math.sin((x/100 + progress * 2 + i/2) * Math.PI) * 30;
+                    ctx.lineTo(x, y);
+                }
+
+                ctx.strokeStyle = `rgb(${160 + i * 10}, ${140 + i * 10}, ${120 + i * 10})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawToplaps(time) {
+            clearCanvas();
+            const progress = (time % 3000) / 3000;
+
+            // Draw erosional surface
+            ctx.beginPath();
+            ctx.moveTo(0, 200);
+            ctx.lineTo(800, 300);
+            ctx.strokeStyle = '#000000';
+            ctx.stroke();
+
+            // Draw truncated layers
+            for (let i = 0; i < 10; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 250 + i * 40);
+                ctx.lineTo(800 - i * 80, 350 + i * 20);
+                ctx.strokeStyle = `rgba(150, 150, 150, ${1 - i/10})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawBaselaps(time) {
+            clearCanvas();
+            const progress = (time % 3000) / 3000;
+
+            // Draw base surface
+            ctx.beginPath();
+            ctx.moveTo(0, 400);
+            ctx.lineTo(800, 500);
+            ctx.strokeStyle = '#000000';
+            ctx.stroke();
+
+            // Draw onlapping layers
+            for (let i = 0; i < 8; i++) {
+                const startX = 100 * i * progress;
+                ctx.beginPath();
+                ctx.moveTo(startX, 400 + i * 20);
+                ctx.lineTo(800, 400 + i * 20);
+                ctx.strokeStyle = `rgb(${180 - i * 20}, ${160 - i * 20}, ${140 - i * 20})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawImbricatedStructures(time) {
+            clearCanvas();
+            const progress = (time % 4000) / 4000;
+
+            for (let i = 0; i < 6; i++) {
+                const offset = 50 * progress;
+                ctx.beginPath();
+                ctx.moveTo(100 + i * 100, 200 + i * 50);
+                ctx.lineTo(300 + i * 100 + offset, 200 + i * 50);
+                ctx.lineTo(350 + i * 100 + offset, 250 + i * 50);
+                ctx.lineTo(500 + i * 100 + offset, 250 + i * 50);
+                ctx.strokeStyle = `rgb(${140 + i * 20}, ${120 + i * 20}, ${100 + i * 20})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawDeltaicDeposit(time) {
+            clearCanvas();
+            const progress = (time % 5000) / 5000;
+
+            // Draw base
+            ctx.beginPath();
+            ctx.moveTo(0, 500);
+            ctx.lineTo(800, 500);
+            ctx.strokeStyle = '#000000';
+            ctx.stroke();
+
+            // Draw foreset beds
+            for (let i = 0; i < 10; i++) {
+                const offset = progress * 100;
+                ctx.beginPath();
+                ctx.moveTo(200 + i * 50 + offset, 200);
+                ctx.lineTo(300 + i * 50 + offset, 500);
+                ctx.strokeStyle = `rgba(150, 150, 150, ${1 - i/10})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawChannelFill(time) {
+            clearCanvas();
+            const progress = (time % 4000) / 4000;
+
+            // Draw channel boundaries
+            ctx.beginPath();
+            ctx.moveTo(100, 300);
+            ctx.quadraticCurveTo(400, 400, 700, 300);
+            ctx.quadraticCurveTo(400, 500, 100, 300);
+            ctx.strokeStyle = '#000000';
+            ctx.stroke();
+
+            // Draw fill layers
+            for (let i = 0; i < 8; i++) {
+                const fillHeight = progress * (200 - i * 20);
+                ctx.beginPath();
+                ctx.moveTo(150, 350 + i * 10);
+                ctx.quadraticCurveTo(400, 400 + i * 10 - fillHeight, 650, 350 + i * 10);
+                ctx.strokeStyle = `rgb(${180 - i * 20}, ${160 - i * 20}, ${140 - i * 20})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawReefComplexes(time) {
+            clearCanvas();
+            const progress = (time % 4000) / 4000;
+
+            // Draw reef structure
+            ctx.beginPath();
+            ctx.moveTo(300, 500);
+            ctx.quadraticCurveTo(400, 300 - progress * 100, 500, 500);
+            ctx.fillStyle = '#cccccc';
+            ctx.fill();
+            ctx.strokeStyle = '#666666';
+            ctx.stroke();
+
+            // Draw surrounding layers
+            for (let i = 0; i < 6; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 350 + i * 50);
+                ctx.quadraticCurveTo(400, 350 + i * 50 - progress * 50, 800, 350 + i * 50);
+                ctx.strokeStyle = `rgba(150, 150, 150, ${1 - i/6})`;
+                ctx.stroke();
+            }
+        }
+
+        function drawVolcanicSills(time) {
+            clearCanvas();
+            const progress = (time % 5000) / 5000;
+
+            // Draw layers
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 200 + i * 50);
+                ctx.lineTo(800, 200 + i * 50);
+                ctx.strokeStyle = '#999999';
+                ctx.stroke();
+            }
+
+            // Draw sills
+            const sillLength = progress * 400;
+            ctx.beginPath();
+            ctx.moveTo(200, 300);
+            ctx.lineTo(200 + sillLength, 300);
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.lineWidth = 1;
+
+            // Draw dike
+            ctx.beginPath();
+            ctx.moveTo(400, 500);
+            ctx.lineTo(400, 500 - progress * 300);
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.lineWidth = 1;
+        }
+
+        function startSimulation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            const structure = document.getElementById('structureSelect').value;
+            const startTime = performance.now();
+
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+
+                switch(structure) {
+                    case 'thinBeds':
+                        drawThinBeds(elapsed);
+                        break;
+                    case 'thrustFaults':
+                        drawThrustFaults(elapsed);
+                        break;
+                    case 'pinchOut':
+                        drawPinchOut(elapsed);
+                        break;
+                    case 'saltDome':
+                        drawSaltDome(elapsed);
+                        break;
+                    case 'carbonateWedges':
+                        drawCarbonateWedges(elapsed);
+                        break;
+                    case 'sigmoidalPattern':
+                        drawSigmoidalPattern(elapsed);
+                        break;
+                    case 'toplaps':
+                        drawToplaps(elapsed);
+                        break;
+                    case '</antArtifact>
