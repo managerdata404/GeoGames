@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geological Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #000;
+            margin-top: 20px;
+        }
+        .controls {
+            margin: 20px;
+        }
+        .info {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Geological Simulation</h1>
+    <div class="controls">
+        <select id="featureSelect">
+            <option value="">Select Geological Feature</option>
+            <option value="thin_beds">Thin Beds</option>
+            <option value="thrust_faults">Thrust Faults</option>
+            <option value="pinch_out">Pinch Out</option>
+            <option value="salt_dome">Salt Dome</option>
+            <option value="carbonate_wedges">Carbonate Wedges</option>
+            <option value="sigmoidal_pattern">Sigmoidal Pattern</option>
+            <option value="toplaps">Toplaps</option>
+            <option value="baselaps">Baselaps</option>
+            <option value="imbricated_structures">Imbricated Structures</option>
+            <option value="deltaic_deposit">Deltaic Deposit</option>
+            <option value="channel_fill_deposit">Channel Fill Deposit</option>
+            <option value="reef_complexes">Reef Complexes</option>
+            <option value="volcanic_sills_dikes">Volcanic Sills and Dikes</option>
+        </select>
+        <button onclick="playSimulation()">Play</button>
+        <button onclick="pauseSimulation()">Pause</button>
+        <button onclick="resetSimulation()">Reset</button>
+    </div>
+    <canvas id="simulationCanvas" width="600" height="400"></canvas>
+    <div class="info" id="featureInfo"></div>
+
+    <script>
+        let canvas = document.getElementById('simulationCanvas');
+        let ctx = canvas.getContext('2d');
+        let animationId;
+        let paused = false;
+        let currentFeature;
+        let tick = 0;
+
+        const features = {
+            thin_beds: 'Thin Beds are layers of sedimentary rock that are less than one meter thick.',
+            thrust_faults: 'Thrust Faults are fractures in the Earth\'s crust where one rock layer is pushed up over another.',
+            pinch_out: 'Pinch Out occurs when a geological layer gradually thins out to the point of disappearance.',
+            salt_dome: 'Salt Domes are formations of salt that have intruded vertically through overlying layers.',
+            carbonate_wedges: 'Carbonate Wedges are sloped deposits of carbonate sediments.',
+            sigmoidal_pattern: 'Sigmoidal Patterns are curved geological structures often seen in rock formations.',
+            toplaps: 'Toplaps are sedimentary structures where rock layers terminate upwards against an erosion surface.',
+            baselaps: 'Baselaps are sedimentary structures where rock layers terminate downwards against an erosion surface.',
+            imbricated_structures: 'Imbricated Structures are overlapping rock layers that resemble shingles.',
+            deltaic_deposit: 'Deltaic Deposits are formed from sediments deposited by rivers as they enter a standing body of water.',
+            channel_fill_deposit: 'Channel Fill Deposits are sediments that fill ancient river or stream channels.',
+            reef_complexes: 'Reef Complexes are structures formed from the skeletons of marine organisms.',
+            volcanic_sills_dikes: 'Volcanic Sills and Dikes are intrusions of magma into cracks within the Earth\'s crust.'
+        };
+
+        document.getElementById('featureSelect').addEventListener('change', function() {
+            let selectedFeature = this.value;
+            document.getElementById('featureInfo').innerText = features[selectedFeature] || '';
+            if (selectedFeature) {
+                resetSimulation();
+                currentFeature = selectedFeature;
+            }
+        });
+
+        function playSimulation() {
+            if (paused) {
+                paused = false;
+                animate();
+            }
+        }
+
+        function pauseSimulation() {
+            paused = true;
+            cancelAnimationFrame(animationId);
+        }
+
+        function resetSimulation() {
+            paused = true;
+            cancelAnimationFrame(animationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            tick = 0;
+        }
+
+        function drawFeature(feature) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            tick++;
+            switch (feature) {
+                case 'thin_beds':
+                    drawThinBeds();
+                    break;
+                case 'thrust_faults':
+                    drawThrustFaults();
+                    break;
+                case 'pinch_out':
+                    drawPinchOut();
+                    break;
+                case 'salt_dome':
+                    drawSaltDome();
+                    break;
+                case 'carbonate_wedges':
+                    drawCarbonateWedges();
+                    break;
+                case 'sigmoidal_pattern':
+                    drawSigmoidalPattern();
+                    break;
+                case 'toplaps':
+                    drawToplaps();
+                    break;
+                case 'baselaps':
+                    drawBaselaps();
+                    break;
+                case 'imbricated_structures':
+                    drawImbricatedStructures();
+                    break;
+                case 'deltaic_deposit':
+                    drawDeltaicDeposit();
+                    break;
+                case 'channel_fill_deposit':
+                    drawChannelFillDeposit();
+                    break;
+                case 'reef_complexes':
+                    drawReefComplexes();
+                    break;
+                case 'volcanic_sills_dikes':
+                    drawVolcanicSillsDikes();
+                    break;
+            }
+        }
+
+        function drawThinBeds() {
+            ctx.fillStyle = 'rgba(150, 75, 0, 0.5)';
+            for (let i = 0; i < 10; i++) {
+                ctx.fillRect(50, 50 + i * 30 + (tick % 20), 500, 20);
+            }
+        }
+
+        function drawThrustFaults() {
+            ctx.fillStyle = 'rgba(0, 128, 0, 0.5)';
+            ctx.fillRect(50, 200 + (tick % 100), 500, 100);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(50, 200 + (tick % 100));
+            ctx.lineTo(550, 100 + (tick % 100));
+            ctx.stroke();
+        }
+
+        function drawPinchOut() {
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(50, 300 - (tick % 200));
+            ctx.lineTo(300, 100);
+            ctx.lineTo(300, 300);
+            ctx.fill();
+        }
+
+        function drawSaltDome() {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.arc(300, 300 - (tick % 100), 100, 0, Math.PI, true);
+            ctx.fill();
+        }
+
+        function drawCarbonateWedges() {
+            ctx.fillStyle = 'rgba(128, 128, 0, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(50, 100 + (tick % 200));
+            ctx.lineTo(550, 300);
+            ctx.lineTo(50, 300);
+            ctx.fill();
+        }
+
+        function drawSigmoidalPattern() {
+            ctx.strokeStyle = 'purple';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(50, 300);
+            ctx.bezierCurveTo(150, 100 + (tick % 200), 450, 100 + (tick % 200), 550, 300);
+            ctx.stroke();
+        }
+
+        function drawToplaps() {
+            ctx.fillStyle = 'rgba(0, 128, 128, 0.5)';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(50, 300 - i * 60 + (tick % 60));
+                ctx.lineTo(300, 100 - i * 20);
+                ctx.lineTo(300, 300 - i * 60);
+                ctx.fill();
+            }
+        }
+
+        function drawBaselaps() {
+            ctx.fillStyle = 'rgba(128, 0, 128, 0.5)';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(50, 100 + i * 60 - (tick % 60));
+                ctx.lineTo(300, 300 + i * 20);
+                ctx.lineTo(300, 100 + i * 60);
+                ctx.fill();
+            }
+        }
+
+        function drawImbricatedStructures() {
+            ctx.fillStyle = 'rgba(0, 128, 0, 0.5)';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(50, 300 - i * 60 + (tick % 60));
+                ctx.lineTo(300, 300 - i * 30 + (tick % 60));
+                ctx.lineTo(300, 300 - i * 90 + (tick % 60));
+                ctx.fill();
+            }
+        }
+
+        function drawDeltaicDeposit() {
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(50, 300);
+            ctx.lineTo(300, 100 + (tick % 100));
+            ctx.lineTo(300, 300);
+            ctx.fill();
+        }
+
+        function drawChannelFillDeposit() {
+            ctx.fillStyle = 'rgba(255, 165, 0, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(50, 300);
+            ctx.lineTo(150, 200 + (tick % 50));
+            ctx.lineTo(250, 300);
+            ctx.fill();
+        }
+
+        function drawReefComplexes() {
+            ctx.fillStyle = 'rgba(0, 128, 128, 0.5)';
+            ctx.beginPath();
+            ctx.arc(300, 300, 100, 0, Math.PI - (tick % Math.PI), true);
+            ctx.fill();
+        }
+
+        function drawVolcanicSillsDikes() {
+            ctx.fillStyle = 'rgba(128, 0, 0, 0.5)';
+            ctx.fillRect(50, 300 - (tick % 20), 200, 20);
+            ctx.fillStyle = 'rgba(128, 0, 0, 0.8)';
+            ctx.beginPath();
+            ctx.moveTo(150, 300 - (tick % 50));
+            ctx.lineTo(300, 150 - (tick % 50));
+            ctx.lineTo(150, 150 - (tick % 50));
+            ctx.fill();
+        }
+
+        function animate() {
+            if (!paused && currentFeature) {
+                tick++;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawFeature(currentFeature);
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        // Initial canvas setup to display something
+        resetSimulation();
+    </script>
+</body>
+</html>
