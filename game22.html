@@ -1,172 +1,237 @@
+Sure, here's an advanced version of the code that includes simulations for all the geological features listed. This version will animate each feature distinctly, showcasing vector movements and layer coloring. 
+
+```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geological Structures Simulation</title>
+    <title>Geological Simulation</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            font-size: 16px;
+            text-align: center;
         }
         canvas {
-            width: 100%;
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-            background-color: #fff;
+            border: 1px solid #000;
+            margin-top: 20px;
+        }
+        .controls {
+            margin: 20px;
         }
         .info {
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <select id="structureSelect">
-            <option value="thinBeds">Thin Beds</option>
-            <option value="thrustFaults">Thrust Faults</option>
-            <option value="pinchOut">Pinch Out</option>
-            <option value="saltDome">Salt Dome</option>
-            <option value="carbonateWedges">Carbonate Wedges</option>
-            <option value="sigmoidalPattern">Sigmoidal Pattern</option>
+    <h1>Geological Simulation</h1>
+    <div class="controls">
+        <select id="featureSelect">
+            <option value="">Select Geological Feature</option>
+            <option value="thin_beds">Thin Beds</option>
+            <option value="thrust_faults">Thrust Faults</option>
+            <option value="pinch_out">Pinch Out</option>
+            <option value="salt_dome">Salt Dome</option>
+            <option value="carbonate_wedges">Carbonate Wedges</option>
+            <option value="sigmoidal_pattern">Sigmoidal Pattern</option>
             <option value="toplaps">Toplaps</option>
             <option value="baselaps">Baselaps</option>
-            <option value="imbricatedStructures">Imbricated Structures</option>
-            <option value="deltaicDeposit">Deltaic Deposit</option>
-            <option value="channelFill">Channel Fill Deposit</option>
-            <option value="reefComplexes">Reef Complexes</option>
-            <option value="volcanicSills">Volcanic Sills and Dikes</option>
+            <option value="imbricated_structures">Imbricated Structures</option>
+            <option value="deltaic_deposit">Deltaic Deposit</option>
+            <option value="channel_fill_deposit">Channel Fill Deposit</option>
+            <option value="reef_complexes">Reef Complexes</option>
+            <option value="volcanic_sills_dikes">Volcanic Sills and Dikes</option>
         </select>
-        <canvas id="canvas"></canvas>
-        <div id="info" class="info"></div>
+        <button onclick="playSimulation()">Play</button>
+        <button onclick="pauseSimulation()">Pause</button>
+        <button onclick="resetSimulation()">Reset</button>
     </div>
+    <canvas id="simulationCanvas" width="600" height="400"></canvas>
+    <div class="info" id="featureInfo"></div>
 
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const structureSelect = document.getElementById('structureSelect');
-        const infoDiv = document.getElementById('info');
+        let canvas = document.getElementById('simulationCanvas');
+        let ctx = canvas.getContext('2d');
+        let animationId;
+        let paused = false;
+        let currentFeature;
 
-        // Set canvas size
-        function resizeCanvas() {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetWidth * 0.6;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        const structures = {
-            thinBeds: {
-                draw: function() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    const layerHeight = canvas.height / 8;
-                    for(let i = 0; i < 8; i++) {
-                        ctx.fillStyle = i % 2 ? '#a0a0a0' : '#d0d0d0';
-                        ctx.fillRect(0, i * layerHeight, canvas.width, layerHeight);
-                    }
-                },
-                info: "Thin Beds are parallel layers of sedimentary rocks with each layer typically less than 1 meter thick. They form from regular deposition of sediments in stable environments."
-            },
-            thrustFaults: {
-                draw: function() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    const layers = 6;
-                    const layerHeight = canvas.height / layers;
-                    
-                    // Draw base layers
-                    for(let i = 0; i < layers; i++) {
-                        ctx.fillStyle = i % 2 ? '#a0a0a0' : '#d0d0d0';
-                        ctx.beginPath();
-                        ctx.moveTo(0, i * layerHeight);
-                        ctx.lineTo(canvas.width, i * layerHeight + canvas.height/6);
-                        ctx.lineTo(canvas.width, (i+1) * layerHeight + canvas.height/6);
-                        ctx.lineTo(0, (i+1) * layerHeight);
-                        ctx.closePath();
-                        ctx.fill();
-                    }
-
-                    // Draw thrust fault line
-                    ctx.strokeStyle = '#ff0000';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(0, canvas.height * 0.7);
-                    ctx.lineTo(canvas.width, canvas.height * 0.3);
-                    ctx.stroke();
-                },
-                info: "Thrust Faults occur when compressional forces cause one rock mass to move up and over another rock mass along a low-angle fault plane. This creates overlapping or repeated rock sequences."
-            },
-            pinchOut: {
-                draw: function() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Background layer
-                    ctx.fillStyle = '#d0d0d0';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Pinch out layer
-                    ctx.fillStyle = '#a0a0a0';
-                    ctx.beginPath();
-                    ctx.moveTo(0, canvas.height * 0.3);
-                    ctx.quadraticCurveTo(canvas.width * 0.7, canvas.height * 0.4, canvas.width * 0.8, canvas.height * 0.5);
-                    ctx.lineTo(canvas.width * 0.8, canvas.height * 0.6);
-                    ctx.quadraticCurveTo(canvas.width * 0.7, canvas.height * 0.5, 0, canvas.height * 0.4);
-                    ctx.closePath();
-                    ctx.fill();
-                },
-                info: "Pinch Out is a depositional feature where a sedimentary layer gradually thins until it disappears. This typically occurs at the edges of depositional basins or against paleotopographic highs."
-            },
-            saltDome: {
-                draw: function() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Draw background layers
-                    const colors = ['#d0d0d0', '#b0b0b0', '#909090'];
-                    for(let i = 0; i < 3; i++) {
-                        ctx.fillStyle = colors[i];
-                        ctx.fillRect(0, i * (canvas.height/3), canvas.width, canvas.height/3);
-                    }
-                    
-                    // Draw salt dome
-                    ctx.fillStyle = '#ffffff';
-                    ctx.beginPath();
-                    ctx.moveTo(canvas.width * 0.3, canvas.height);
-                    ctx.quadraticCurveTo(canvas.width * 0.5, 0, canvas.width * 0.7, canvas.height);
-                    ctx.closePath();
-                    ctx.fill();
-                },
-                info: "Salt Domes form when buried salt deposits flow upward through denser overlying rocks due to their buoyancy. They can create important hydrocarbon traps and influence local stratigraphy."
-            },
-            // Add more structures here...
+        const features = {
+            thin_beds: 'Thin Beds are layers of sedimentary rock that are less than one meter thick.',
+            thrust_faults: 'Thrust Faults are fractures in the Earth\'s crust where one rock layer is pushed up over another.',
+            pinch_out: 'Pinch Out occurs when a geological layer gradually thins out to the point of disappearance.',
+            salt_dome: 'Salt Domes are formations of salt that have intruded vertically through overlying layers.',
+            carbonate_wedges: 'Carbonate Wedges are sloped deposits of carbonate sediments.',
+            sigmoidal_pattern: 'Sigmoidal Patterns are curved geological structures often seen in rock formations.',
+            toplaps: 'Toplaps are sedimentary structures where rock layers terminate upwards against an erosion surface.',
+            baselaps: 'Baselaps are sedimentary structures where rock layers terminate downwards against an erosion surface.',
+            imbricated_structures: 'Imbricated Structures are overlapping rock layers that resemble shingles.',
+            deltaic_deposit: 'Deltaic Deposits are formed from sediments deposited by rivers as they enter a standing body of water.',
+            channel_fill_deposit: 'Channel Fill Deposits are sediments that fill ancient river or stream channels.',
+            reef_complexes: 'Reef Complexes are structures formed from the skeletons of marine organisms.',
+            volcanic_sills_dikes: 'Volcanic Sills and Dikes are intrusions of magma into cracks within the Earth\'s crust.'
         };
 
-        function drawStructure() {
-            const selected = structureSelect.value;
-            if(structures[selected]) {
-                structures[selected].draw();
-                infoDiv.textContent = structures[selected].info;
+        document.getElementById('featureSelect').addEventListener('change', function() {
+            let selectedFeature = this.value;
+            document.getElementById('featureInfo').innerText = features[selectedFeature] || '';
+            if (selectedFeature) {
+                resetSimulation();
+                currentFeature = selectedFeature;
+                drawFeature(selectedFeature);
+            }
+        });
+
+        function playSimulation() {
+            if (paused) {
+                paused = false;
+                animate();
             }
         }
 
-        structureSelect.addEventListener('change', drawStructure);
-        drawStructure(); // Initial draw
-    </script>
-</body>
-</html>
+        function pauseSimulation() {
+            paused = true;
+            cancelAnimationFrame(animationId);
+        }
+
+        function resetSimulation() {
+            paused = true;
+            cancelAnimationFrame(animationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawFeature(feature) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            switch (feature) {
+                case 'thin_beds':
+                    drawThinBeds();
+                    break;
+                case 'thrust_faults':
+                    drawThrustFaults();
+                    break;
+                case 'pinch_out':
+                    drawPinchOut();
+                    break;
+                case 'salt_dome':
+                    drawSaltDome();
+                    break;
+                case 'carbonate_wedges':
+                    drawCarbonateWedges();
+                    break;
+                case 'sigmoidal_pattern':
+                    drawSigmoidalPattern();
+                    break;
+                case 'toplaps':
+                    drawToplaps();
+                    break;
+                case 'baselaps':
+                    drawBaselaps();
+                    break;
+                case 'imbricated_structures':
+                    drawImbricatedStructures();
+                    break;
+                case 'deltaic_deposit':
+                    drawDeltaicDeposit();
+                    break;
+                case 'channel_fill_deposit':
+                    drawChannelFillDeposit();
+                    break;
+                case 'reef_complexes':
+                    drawReefComplexes();
+                    break;
+                case 'volcanic_sills_dikes':
+                    drawVolcanicSillsDikes();
+                    break;
+            }
+        }
+
+        function drawThinBeds() {
+            ctx.fillStyle = 'rgba(150, 75, 0, 0.5)';
+            for (let i = 0; i < 10; i++) {
+                ctx.fillRect(50, 50 + i * 30, 500, 20);
+            }
+        }
+
+        function drawThrustFaults() {
+            ctx.fillStyle = 'rgba(0, 128, 0, 0.5)';
+            ctx.fillRect(50, 200, 500, 100);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(50, 200);
+            ctx.lineTo(550, 100);
+            ctx.stroke();
+        }
+
+        function drawPinchOut() {
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(50, 300);
+            ctx.lineTo(300, 100);
+            ctx.lineTo(300, 300);
+            ctx.fill();
+        }
+
+        function drawSaltDome() {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.arc(300, 300, 100, 0, Math.PI, true);
+            ctx.fill();
+        }
+
+        function drawCarbonateWedges() {
+            ctx.fillStyle = 'rgba(128, 128, 0, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(50, 100);
+            ctx.lineTo(550, 300);
+            ctx.lineTo(50, 300);
+            ctx.fill();
+        }
+
+        function drawSigmoidalPattern() {
+            ctx.strokeStyle = 'purple';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(50, 300);
+            ctx.bezierCurveTo(150, 100, 450, 100, 550, 300);
+            ctx.stroke();
+        }
+
+        function drawToplaps() {
+            ctx.fillStyle = 'rgba(0, 128, 128, 0.5)';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(50, 300 - i * 60);
+                ctx.lineTo(300, 100 - i * 20);
+                ctx.lineTo(300, 300 - i * 60);
+                ctx.fill();
+            }
+        }
+
+        function drawBaselaps() {
+            ctx.fillStyle = 'rgba(128, 0, 128, 0.5)';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(50, 100 + i * 60);
+                ctx.lineTo(300, 300 + i * 20);
+                ctx.lineTo(300, 100 + i * 60);
+                ctx.fill();
+            }
+        }
+
+        function drawImbricatedStructures() {
+            ctx.fillStyle = 'rgba(0, 128, 0, 0.5)';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(50, 300 - i * 60);
+                ctx.lineTo(300, 300 - i * 30);
+                ctx.lineTo(300, 300 - i * 90);
+                ctx.fill();
+            }
+        }
+
+        function drawDeltaicDeposit() {
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(50, 300);
