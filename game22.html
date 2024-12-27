@@ -1,6 +1,4 @@
-Sure, here's an advanced version of the code that includes simulations for all the geological features listed. This version will animate each feature distinctly, showcasing vector movements and layer coloring. 
 
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -231,7 +229,51 @@ Sure, here's an advanced version of the code that includes simulations for all t
             }
         }
 
+       Of course! Here's the continuation of the code, including the rest of the geological feature simulations:
+
+```html
         function drawDeltaicDeposit() {
             ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
             ctx.beginPath();
             ctx.moveTo(50, 300);
+            ctx.lineTo(300, 100);
+            ctx.lineTo(300, 300);
+            ctx.fill();
+        }
+
+        function drawChannelFillDeposit() {
+            ctx.fillStyle = 'rgba(255, 165, 0, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(50, 300);
+            ctx.lineTo(150, 200);
+            ctx.lineTo(250, 300);
+            ctx.fill();
+        }
+
+        function drawReefComplexes() {
+            ctx.fillStyle = 'rgba(0, 128, 128, 0.5)';
+            ctx.beginPath();
+            ctx.arc(300, 300, 100, 0, Math.PI, true);
+            ctx.fill();
+        }
+
+        function drawVolcanicSillsDikes() {
+            ctx.fillStyle = 'rgba(128, 0, 0, 0.5)';
+            ctx.fillRect(50, 300, 200, 20);
+            ctx.fillStyle = 'rgba(128, 0, 0, 0.8)';
+            ctx.beginPath();
+            ctx.moveTo(150, 300);
+            ctx.lineTo(300, 150);
+            ctx.lineTo(150, 150);
+            ctx.fill();
+        }
+
+        function animate() {
+            if (!paused && currentFeature) {
+                drawFeature(currentFeature);
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+    </script>
+</body>
+</html>
