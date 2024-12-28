@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fault Seal Analysis Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            touch-action: manipulation;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px 0;
+            touch-action: none;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .control-group {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+        }
+        .legend {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+        }
+        .legend-item {
+            margin: 5px 0;
+        }
+        .color-box {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fault Seal Analysis Simulation</h1>
+        <div class="controls">
+            <div class="control-group">
+                <label for="faultType">Fault Type:</label>
+                <select id="faultType">
+                    <option value="normal">Normal Fault</option>
+                    <option value="reverse">Reverse Fault</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="throwSlider">Throw (m):</label>
+                <input type="range" id="throwSlider" min="0" max="100" value="30">
+                <span id="throwValue">30</span>
+            </div>
+            <div class="control-group">
+                <button id="startBtn">Start Animation</button>
+                <button id="stopBtn" disabled>Stop Animation</button>
+                <button id="resetBtn">Reset</button>
+            </div>
+        </div>
+        <canvas id="faultCanvas" width="600" height="400"></canvas>
+        <div class="legend">
+            <h3>Legend:</h3>
+            <div class="legend-item">
+                <div class="color-box" style="background: #FFD700"></div>Sand
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #808080"></div>Shale
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #FF0000"></div>Fault Line
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('faultCanvas');
+        const ctx = canvas.getContext('2d');
+        const faultTypeSelect = document.getElementById('faultType');
+        const throwSlider = document.getElementById('throwSlider');
+        const throwValue = document.getElementById('throwValue');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        let animationId = null;
+        let currentOffset = 0;
+        let targetOffset = 0;
+        const animationSpeed = 1;
+
+        // Layer properties
+        const layers = [
+            { type: 'sand', thickness: 40, color: '#FFD700' },
+            { type: 'shale', thickness: 40, color: '#808080' },
+            { type: 'sand', thickness: 40, color: '#FFD700' },
+            { type: 'shale', thickness: 40, color: '#808080' },
+            { type: 'sand', thickness: 40, color: '#FFD700' }
+        ];
+
+        function drawLayer(x, y, width, height, color, cut = false) {
+            ctx.fillStyle = color;
+            if (!cut) {
+                ctx.fillRect(x, y, width, height);
+            } else {
+                // Draw layer with fault cut
+                const faultX = 300;
+                const faultAngle = Math.PI / 6;
+                const dx = height * Math.tan(faultAngle);
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                if (x < faultX) {
+                    ctx.lineTo(Math.min(x + width, faultX), y);
+                    if (x + width > faultX) {
+                        ctx.lineTo(faultX + dx, y + height);
+                        ctx.lineTo(x + width, y + height);
+                    } else {
+                        ctx.lineTo(x + width, y + height);
+                    }
+                } else {
+                    ctx.lineTo(x + width, y);
+                    ctx.lineTo(x + width, y + height);
+                    ctx.lineTo(x, y + height);
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        function animate() {
+            const isNormal = faultTypeSelect.value === 'normal';
+            const direction = isNormal ? 1 : -1;
+            
+            if (Math.abs(currentOffset - targetOffset) > 0.1) {
+                currentOffset += (targetOffset - currentOffset) * 0.05;
+                drawFault(true);
+                animationId = requestAnimationFrame(animate);
+            } else {
+                stopAnimation();
+            }
+        }
+
+        function startAnimation() {
+            if (!animationId) {
+                targetOffset = parseInt(throwSlider.value);
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                animate();
+            }
+        }
+
+        function stopAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+
+        function resetAnimation() {
+            stopAnimation();
+            currentOffset = 0;
+            targetOffset = 0;
+            drawFault(false);
+        }
+
+        function drawFault(animate = false) {
+            const isNormal = faultTypeSelect.value === 'normal';
+            const offset = animate ? currentOffset : 0;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw layers with fault cut
+            let currentY = 100;
+            layers.forEach((layer, index) => {
+                // Draw footwall (left side)
+                drawLayer(50, currentY, 250, layer.thickness, layer.color, true);
+                
+                // Draw hanging wall (right side)
+                const hangingWallOffset = isNormal ? offset : -offset;
+                drawLayer(300, currentY + hangingWallOffset, 250, layer.thickness, layer.color, true);
+                
+                currentY += layer.thickness;
+            });
+
+            // Draw fault line
+            ctx.beginPath();
+            ctx.strokeStyle = '#FF0000';
+            ctx.lineWidth = 3;
+            ctx.moveTo(300, 50);
+            ctx.lineTo(300, 350);
+            ctx.stroke();
+
+            // Draw movement arrows if not animating
+            if (!animate) {
+                drawMovementArrows(isNormal);
+            }
+
+            // Analyze and display seal status
+            analyzeSeal(offset, isNormal);
+        }
+
+        function drawMovementArrows(isNormal) {
+            const arrowLength = 20;
+            ctx.strokeStyle = '#0000FF';
+            ctx.fillStyle = '#0000FF';
+            ctx.lineWidth = 2;
+
+            if (isNormal) {
+                drawArrow(400, 150, 400, 180);
+                drawArrow(200, 180, 200, 150);
+            } else {
+                drawArrow(400, 180, 400, 150);
+                drawArrow(200, 150, 200, 180);
+            }
+        }
+
+        function drawArrow(fromX, fromY, toX, toY) {
+            const headLength = 10;
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), 
+                      toY - headLength * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6),
+                      toY - headLength * Math.sin(angle + Math.PI / 6));
+            ctx.stroke();
+        }
+
+        function analyzeSeal(throw_value, isNormal) {
+            ctx.fillStyle = '#000000';
+            ctx.font = '16px Arial';
+            
+            let sealStatus = '';
+            if (throw_value < 20) {
+                sealStatus = 'Minimal fault seal risk - Small throw';
+            } else if (throw_value > 80) {
+                sealStatus = 'High fault seal risk - Large throw';
+            } else {
+                sealStatus = 'Moderate fault seal risk';
+            }
+
+            ctx.fillText(`Throw: ${Math.round(throw_value)}m`, 20, 30);
+            ctx.fillText(`Fault Type: ${isNormal ? 'Normal' : 'Reverse'}`, 20, 50);
+            ctx.fillText(`Status: ${sealStatus}`, 20, 70);
+        }
+
+        // Event listeners
+        throwSlider.addEventListener('input', function() {
+            throwValue.textContent = this.value;
+            if (!animationId) {
+                drawFault(false);
+            }
+        });
+
+        faultTypeSelect.addEventListener('change', function() {
+            resetAnimation();
+        });
+
+        startBtn.addEventListener('click', startAnimation);
+        stopBtn.addEventListener('click', stopAnimation);
+        resetBtn.addEventListener('click', resetAnimation);
+
+        // Initial draw
+        drawFault(false);
+    </script>
+</body>
+</html>
