@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fault Block Movement</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        canvas {
+            border: 2px solid #333;
+            margin: 10px 0;
+            background-color: #f0f0f0;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        select {
+            padding: 5px;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .legend {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fault Block Movement with Hydrocarbons</h1>
+        <div class="controls">
+            <select id="faultType">
+                <option value="normal">Normal Fault</option>
+                <option value="reverse">Reverse Fault</option>
+            </select>
+            <select id="fluidType">
+                <option value="oil">Oil</option>
+                <option value="gas">Gas</option>
+                <option value="water">Water</option>
+            </select>
+            <button id="startBtn">Start Movement</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        <canvas id="canvas" width="800" height="500"></canvas>
+        <div class="legend">
+            <h3>Legend:</h3>
+            <p>🟨 Sand (Reservoir Rock)</p>
+            <p>⬜ Shale (Seal Rock)</p>
+            <p>🔴 Fault Line</p>
+            <p>⚫ Oil | 🔵 Water | 🟣 Gas</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isAnimating = false;
+        let currentDisplacement = 0;
+        let particles = [];
+
+        // Layer configuration
+        const layers = [
+            { type: 'shale', color: '#CCCCCC' },
+            { type: 'sand', color: '#FFD700' },
+            { type: 'shale', color: '#CCCCCC' },
+            { type: 'sand', color: '#FFD700' },
+            { type: 'shale', color: '#CCCCCC' }
+        ];
+
+        class FaultBlock {
+            constructor(x, y, width, height, isHangingWall) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.isHangingWall = isHangingWall;
+                this.displacement = 0;
+            }
+
+            draw(displacement) {
+                const layerHeight = this.height / layers.length;
+                const isNormal = document.getElementById('faultType').value === 'normal';
+                const moveY = this.isHangingWall ? (isNormal ? displacement : -displacement) : 0;
+
+                // Draw each layer in the fault block
+                layers.forEach((layer, index) => {
+                    const layerY = this.y + (index * layerHeight) + moveY;
+                    
+                    ctx.save();
+                    ctx.beginPath();
+                    
+                    // Create fault block path
+                    if (this.isHangingWall) {
+                        // Hanging wall block
+                        const angle = isNormal ? Math.PI / 6 : -Math.PI / 6;
+                        ctx.moveTo(this.x, layerY);
+                        ctx.lineTo(this.x + this.width, layerY);
+                        ctx.lineTo(this.x + this.width, layerY + layerHeight);
+                        ctx.lineTo(this.x, layerY + layerHeight);
+                    } else {
+                        // Footwall block
+                        const angle = isNormal ? Math.PI / 6 : -Math.PI / 6;
+                        ctx.moveTo(this.x, layerY);
+                        ctx.lineTo(this.x + this.width, layerY);
+                        ctx.lineTo(this.x + this.width, layerY + layerHeight);
+                        ctx.lineTo(this.x, layerY + layerHeight);
+                    }
+                    
+                    ctx.closePath();
+                    ctx.clip();
+                    
+                    // Fill layer
+                    ctx.fillStyle = layer.color;
+                    ctx.fillRect(this.x, layerY, this.width, layerHeight);
+                    
+                    // Add texture to sand layers
+                    if (layer.type === 'sand') {
+                        ctx.strokeStyle = '#DAA520';
+                        ctx.lineWidth = 0.5;
+                        for (let i = 0; i < this.width; i += 10) {
+                            ctx.beginPath();
+                            ctx.moveTo(this.x + i, layerY);
+                            ctx.lineTo(this.x + i, layerY + layerHeight);
+                            ctx.stroke();
+                        }
+                    }
+                    
+                    ctx.restore();
+                });
+            }
+        }
+
+        class Particle {
+            constructor(x, y, block) {
+                this.x = x;
+                this.y = y;
+                this.originalX = x;
+                this.originalY = y;
+                this.block = block;
+                this.speed = Math.random() * 0.5 + 0.5;
+            }
+
+            update(displacement) {
+                const isNormal = document.getElementById('faultType').value === 'normal';
+                const fluidType = document.getElementById('fluidType').value;
+                
+                if (this.block.isHangingWall) {
+                    // Move with hanging wall
+                    const moveY = isNormal ? displacement : -displacement;
+                    this.y = this.originalY + moveY;
+                    
+                    // Add slight movement based on fluid type
+                    if (fluidType === 'gas') {
+                        this.y -= this.speed * 0.2;
+                    } else if (fluidType === 'water') {
+                        this.y += this.speed * 0.1;
+                    }
+                }
+
+                // Keep particles within their block
+                const layerHeight = 80;
+                const currentLayer = Math.floor((this.y - 50) / layerHeight);
+                if (currentLayer < 0 || currentLayer >= layers.length) {
+                    this.y = this.originalY;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                const fluidType = document.getElementById('fluidType').value;
+                switch(fluidType) {
+                    case 'oil':
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                        break;
+                    case 'water':
+                        ctx.fillStyle = 'rgba(0, 0, 255, 0.7)';
+                        break;
+                    case 'gas':
+                        ctx.fillStyle = 'rgba(128, 0, 128, 0.7)';
+                        break;
+                }
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Create fault blocks
+        const footwallBlock = new FaultBlock(50, 50, 300, 400, false);
+        const hangingWallBlock = new FaultBlock(350, 50, 400, 400, true);
+
+        function initializeParticles() {
+            particles = [];
+            // Add particles to sand layers in both blocks
+            layers.forEach((layer, index) => {
+                if (layer.type === 'sand') {
+                    const layerY = 50 + index * 80;
+                    // Footwall particles
+                    for (let i = 0; i < 15; i++) {
+                        particles.push(new Particle(
+                            Math.random() * 250 + 70,
+                            layerY + Math.random() * 60 + 10,
+                            footwallBlock
+                        ));
+                    }
+                    // Hanging wall particles
+                    for (let i = 0; i < 15; i++) {
+                        particles.push(new Particle(
+                            Math.random() * 250 + 400,
+                            layerY + Math.random() * 60 + 10,
+                            hangingWallBlock
+                        ));
+                    }
+                }
+            });
+        }
+
+        function draw(displacement) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw fault blocks
+            footwallBlock.draw(displacement);
+            hangingWallBlock.draw(displacement);
+            
+            // Draw fault line
+            ctx.beginPath();
+            ctx.strokeStyle = '#FF0000';
+            ctx.lineWidth = 3;
+            ctx.moveTo(350, 0);
+            ctx.lineTo(350, canvas.height);
+            ctx.stroke();
+            
+            // Update and draw particles
+            particles.forEach(particle => {
+                particle.update(displacement);
+                particle.draw();
+            });
+        }
+
+        function animate() {
+            if (!isAnimating) return;
+
+            if (currentDisplacement < 100) {
+                currentDisplacement += 0.5;
+                draw(currentDisplacement);
+                requestAnimationFrame(animate);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('startBtn').addEventListener('click', () => {
+            isAnimating = true;
+            animate();
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            isAnimating = false;
+            currentDisplacement = 0;
+            initializeParticles();
+            draw(0);
+        });
+
+        document.getElementById('faultType').addEventListener('change', () => {
+            currentDisplacement = 0;
+            initializeParticles();
+            draw(0);
+        });
+
+        document.getElementById('fluidType').addEventListener('change', () => {
+            draw(currentDisplacement);
+        });
+
+        // Initial setup
+        initializeParticles();
+        draw(0);
+    </script>
+</body>
+</html>
