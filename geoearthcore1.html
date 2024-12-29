@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Convection and Radiation Simulation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #111;
+      color: #fff;
+    }
+    canvas {
+      margin-top: 10px;
+      border: 2px solid #444;
+      background: #222;
+    }
+    .controls {
+      margin-top: 10px;
+    }
+    label {
+      margin-right: 10px;
+    }
+    .info {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #333;
+      border-radius: 8px;
+      width: 80%;
+      text-align: justify;
+    }
+  </style>
+</head>
+<body>
+  <h1>Convection and Radiation Simulation</h1>
+  <canvas id="simulationCanvas" width="600" height="600"></canvas>
+  <div class="controls">
+    <label>Heat Type:</label>
+    <select id="heatType">
+      <option value="convection">Convection</option>
+      <option value="radiation">Radiation</option>
+    </select>
+    <label>Speed:</label>
+    <input type="range" id="speedSlider" min="1" max="10" value="5" />
+    <button id="startButton">Start</button>
+    <button id="resetButton">Reset</button>
+  </div>
+
+  <div class="info">
+    <h3>Convection and Radiation in Earth's Mantle</h3>
+    <p>
+      <strong>Convection:</strong> The primary force behind plate tectonics.  
+      Heat from the Earth's core causes mantle material to rise as it becomes less dense.  
+      As it cools, it sinks back down, forming circular currents that drag tectonic plates.
+    </p>
+    <p>
+      <strong>Radiation:</strong> A secondary process.  
+      Heat from the Earth's core radiates outward to the mantle, transferring energy through waves.  
+      While not the main driver, it supports tectonic processes by providing additional heat flow.
+    </p>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simulationCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const radius = 250;
+    let particles = [];
+    let animationFrameId;
+    let running = false;
+
+    const settings = {
+      heatType: 'convection',
+      speed: 5,
+    };
+
+    const layers = [
+      { radius: radius, color: '#4682B4', label: 'Crust' }, // Crust
+      { radius: radius - 30, color: '#8B4513', label: 'Mantle' }, // Mantle
+      { radius: radius - 100, color: '#FF4500', label: 'Core' }, // Core
+    ];
+
+    function initializeParticles() {
+      particles = [];
+      for (let i = 0; i < 100; i++) {
+        particles.push({
+          angle: Math.random() * Math.PI * 2,
+          radius: 110, // Start at core radius
+          speed: Math.random() * 0.02 + 0.01,
+          spiralFactor: Math.random() * 0.5 + 0.5,
+          direction: Math.random() > 0.5 ? 1 : -1, // Clockwise or counter-clockwise
+        });
+      }
+    }
+
+    // Draw Earth layers
+    function drawLayers() {
+      layers.forEach(layer => {
+        ctx.beginPath();
+        ctx.arc(width / 2, height / 2, layer.radius, 0, Math.PI * 2);
+        ctx.fillStyle = layer.color;
+        ctx.fill();
+        ctx.closePath();
+
+        // Labels
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(layer.label, width / 2, height / 2 - layer.radius + 20);
+      });
+    }
+
+    // Convection - Spiral rotating lines expanding outward
+    function drawConvection() {
+      particles.forEach(particle => {
+        // Calculate position
+        const x = width / 2 + particle.radius * Math.cos(particle.angle);
+        const y = height / 2 + particle.radius * Math.sin(particle.angle);
+
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFD700';
+        ctx.fill();
+        ctx.closePath();
+
+        // Draw spiral path line
+        ctx.beginPath();
+        ctx.moveTo(width / 2, height / 2);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = '#FFD700';
+        ctx.stroke();
+        ctx.closePath();
+
+        // Update particle position for spiral motion
+        particle.angle += particle.speed * settings.speed * 0.01 * particle.direction;
+        particle.radius += particle.spiralFactor * 0.1;
+
+        // Reset particles if they reach mantle edge
+        if (particle.radius > radius - 30) {
+          particle.radius = 110; // Reset to core
+          particle.angle = Math.random() * Math.PI * 2; // Restart angle
+        }
+      });
+    }
+
+    // Radiation - Vertical heat rays
+    function drawRadiation() {
+      particles.forEach(particle => {
+        const x = width / 2 + particle.radius * Math.cos(particle.angle);
+        const y = height / 2 + particle.radius * Math.sin(particle.angle);
+
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFD700';
+        ctx.fill();
+        ctx.closePath();
+
+        // Draw radiation line
+        ctx.beginPath();
+        ctx.moveTo(width / 2, height / 2);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = '#FFD700';
+        ctx.stroke();
+        ctx.closePath();
+
+        // Move particles outward
+        particle.radius += particle.speed * settings.speed * 0.5;
+
+        // Reset particles when out of bounds
+        if (particle.radius > radius - 30) {
+          particle.radius = 110;
+        }
+      });
+    }
+
+    function animate() {
+      if (!running) return;
+
+      ctx.clearRect(0, 0, width, height);
+      drawLayers();
+
+      if (settings.heatType === 'convection') {
+        drawConvection();
+      } else if (settings.heatType === 'radiation') {
+        drawRadiation();
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    function startSimulation() {
+      if (!running) {
+        running = true;
+        animate();
+      }
+    }
+
+    function resetSimulation() {
+      cancelAnimationFrame(animationFrameId);
+      running = false;
+      initializeParticles();
+      drawLayers();
+    }
+
+    document.getElementById('startButton').addEventListener('click', startSimulation);
+    document.getElementById('resetButton').addEventListener('click', resetSimulation);
+    document.getElementById('heatType').addEventListener('change', e => {
+      settings.heatType = e.target.value;
+    });
+    document.getElementById('speedSlider').addEventListener('input', e => {
+      settings.speed = e.target.value;
+    });
+
+    initializeParticles();
+    drawLayers();
+  </script>
+</body>
+</html>
