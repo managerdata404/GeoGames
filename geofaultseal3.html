@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<!-- Previous HEAD and STYLE sections remain the same -->
+<head>
+    <title>Fault Seal Analysis Simulation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Previous styles remain the same -->
+    <style>
+        /* Previous styles remain unchanged */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .control-group {
+            margin-bottom: 10px;
+        }
+        .control-group input[type="range"] {
+            width: 60%;
+        }
+        canvas {
+            width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            font-size: 14px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        @media (max-width: 600px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            label {
+                width: 100px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Previous HTML structure remains the same -->
+    <div class="container">
+        <h2>Fault Seal Analysis Simulation</h2>
+        <div class="controls">
+            <div class="control-group">
+                <label>Fault Type:</label>
+                <select id="faultType">
+                    <option value="normal">Normal Fault</option>
+                    <option value="reverse">Reverse Fault</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Fault Angle (°):</label>
+                <input type="range" id="faultAngle" min="-180" max="180" value="90">
+                <span id="faultAngleValue">90°</span>
+            </div>
+            <div class="control-group">
+                <label>Throw Height:</label>
+                <input type="range" id="throwHeight" min="0" max="100" value="0">
+                <span id="throwHeightValue">0</span>
+            </div>
+            <div class="control-group">
+                <label>Animation Speed:</label>
+                <input type="range" id="animationSpeed" min="1" max="10" value="5">
+                <span id="speedValue">5</span>
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="startBtn">Start Simulation</button>
+            <button id="stopBtn" disabled>Stop Simulation</button>
+            <button id="resetBtn">Reset</button>
+            <button id="toggleFluid">Toggle Fluid Flow</button>
+        </div>
+        <canvas id="simulationCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationId = null;
+        let isSimulationRunning = false;
+
+        // Initial configuration
+        const defaultConfig = {
+            layers: [
+                { type: 'shale', color: '#666666' },
+                { type: 'sand', color: '#FFD700' },
+                { type: 'shale', color: '#666666' },
+                { type: 'sand', color: '#FFD700' },
+                { type: 'shale', color: '#666666' }
+            ],
+            layerHeight: 0,
+            faultType: 'normal',
+            faultAngle: 90,
+            throwHeight: 0,
+            animationSpeed: 5,
+            fluidFlow: false
+        };
+
+        let config = JSON.parse(JSON.stringify(defaultConfig));
+
+        function resizeCanvas() {
+            const containerWidth = canvas.parentElement.clientWidth - 30;
+            const aspectRatio = 2;
+            canvas.width = containerWidth;
+            canvas.height = containerWidth / aspectRatio;
+            config.layerHeight = canvas.height / 8;
+            drawLayers();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let particles = [];
+        const PARTICLE_COUNT = 100;
+
+        function getLayerAtPosition(x, y, throwOffset) {
+            const centerX = canvas.width / 2;
+            const baseY = y - (x < centerX ? 0 : throwOffset);
+            const layerIndex = Math.floor((baseY - canvas.height * 0.2) / config.layerHeight);
+            return layerIndex >= 0 && layerIndex < config.layers.length ? config.layers[layerIndex] : null;
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const layerChoice = Math.random() < 0.5 ? 1 : 3; // Index of sand layers
+                const baseY = canvas.height * 0.2 + layerChoice * config.layerHeight;
+                particles.push({
+                    x: Math.random() * (canvas.width * 0.25),
+                    y: baseY + Math.random() * (config.layerHeight * 0.8),
+                    vx: 2 + Math.random() * 2,
+                    vy: 0,
+                    active: true,
+                    layerIndex: layerChoice,
+                    crossedFault: false
+                });
+            }
+        }
+
+        function drawLayer(y, height, color, throwOffset) {
+            const centerX = canvas.width / 2;
+            const angle = (90 - config.faultAngle) * Math.PI / 180;
+            
+            ctx.beginPath();
+            ctx.fillStyle = color;
+
+            // Left side
+            ctx.moveTo(0, y);
+            ctx.lineTo(centerX, y + (centerX) * Math.tan(angle));
+            ctx.lineTo(centerX, y + height + (centerX) * Math.tan(angle));
+            ctx.lineTo(0, y + height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Right side with displacement
+            ctx.beginPath();
+            ctx.moveTo(centerX, y + throwOffset + (centerX) * Math.tan(angle));
+            ctx.lineTo(canvas.width, y + throwOffset);
+            ctx.lineTo(canvas.width, y + height + throwOffset);
+            ctx.lineTo(centerX, y + height + throwOffset + (centerX) * Math.tan(angle));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawLayers() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const throwOffset = config.throwHeight * (config.faultType === 'normal' ? 1 : -1);
+
+            // Draw layers
+            config.layers.forEach((layer, index) => {
+                const baseY = canvas.height * 0.2 + index * config.layerHeight;
+                drawLayer(baseY, config.layerHeight, layer.color, throwOffset);
+            });
+
+            // Draw fault line
+            const centerX = canvas.width / 2;
+            ctx.beginPath();
+            ctx.strokeStyle = '#FF0000';
+            ctx.lineWidth = 2;
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvas.height);
+            ctx.stroke();
+        }
+
+        function canFlowAcrossFault(particle, throwOffset) {
+            const centerX = canvas.width / 2;
+            const particleLayerY = particle.y - (particle.x < centerX ? 0 : throwOffset);
+            const particleLayerIndex = Math.floor((particleLayerY - canvas.height * 0.2) / config.layerHeight);
+            
+            // Check the corresponding position on the other side of the fault
+            const otherSideY = particle.y + (particle.x < centerX ? throwOffset : -throwOffset);
+            const otherLayerIndex = Math.floor((otherSideY - canvas.height * 0.2) / config.layerHeight);
+            
+            return (particleLayerIndex === otherLayerIndex) && 
+                   config.layers[particleLayerIndex]?.type === 'sand';
+        }
+
+        function updateFluid() {
+            if (!config.fluidFlow) return;
+
+            const centerX = canvas.width / 2;
+            const throwOffset = config.throwHeight * (config.faultType === 'normal' ? 1 : -1);
+
+            particles.forEach(particle => {
+                if (!particle.active) return;
+
+                // Check if particle can flow across fault
+                if (!particle.crossedFault && Math.abs(particle.x - centerX) < 2) {
+                    if (canFlowAcrossFault(particle, throwOffset)) {
+                        particle.crossedFault = true;
+                        particle.y += throwOffset;
+                    } else {
+                        // Reset particle if it can't cross
+                        particle.x = Math.random() * (canvas.width * 0.25);
+                        particle.crossedFault = false;
+                    }
+                }
+
+                // Update particle position
+                if (!particle.crossedFault && particle.x < centerX) {
+                    particle.x += particle.vx * (config.animationSpeed / 5);
+                } else if (particle.crossedFault && particle.x < canvas.width) {
+                    particle.x += particle.vx * (config.animationSpeed / 5);
+                } else {
+                    // Reset particle
+                    particle.x = Math.random() * (canvas.width * 0.25);
+                    particle.y = canvas.height * 0.2 + particle.layerIndex * config.layerHeight + 
+                               Math.random() * (config.layerHeight * 0.8);
+                    particle.crossedFault = false;
+                }
+
+                // Draw particle
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(0, 100, 255, 0.6)';
+                ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function animate() {
+            if (!isSimulationRunning) return;
+            drawLayers();
+            updateFluid();
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function resetSimulation() {
+            // Reset configuration
+            config = JSON.parse(JSON.stringify(defaultConfig));
+            
+            // Reset UI controls
+            document.getElementById('faultType').value = config.faultType;
+            document.getElementById('faultAngle').value = config.faultAngle;
+            document.getElementById('faultAngleValue').textContent = `${config.faultAngle}°`;
+            document.getElementById('throwHeight').value = config.throwHeight;
+            document.getElementById('throwHeightValue').textContent = config.throwHeight;
+            document.getElementById('animationSpeed').value = config.animationSpeed;
+            document.getElementById('speedValue').textContent = config.animationSpeed;
+            
+            // Reset simulation state
+            isSimulationRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            
+            // Reset particles
+            config.fluidFlow = false;
+            initParticles();
+            
+            // Redraw layers
+            drawLayers();
+        }
+
+        // Event Listeners
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (!isSimulationRunning) {
+                isSimulationRunning = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                animate();
+            }
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            isSimulationRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        });
+
+        document.getElementById('faultType').addEventListener('change', (e) => {
+            config.faultType = e.target.value;
+            if (isSimulationRunning) drawLayers();
+        });
+
+        document.getElementById('faultAngle').addEventListener('input', (e) => {
+            config.faultAngle = parseInt(e.target.value);
+            document.getElementById('faultAngleValue').textContent = `${config.faultAngle}°`;
+            if (isSimulationRunning) drawLayers();
+        });
+
+        document.getElementById('throwHeight').addEventListener('input', (e) => {
+            config.throwHeight = parseInt(e.target.value);
+            document.getElementById('throwHeightValue').textContent = config.throwHeight;
+            if (isSimulationRunning) drawLayers();
+        });
+
+        document.getElementById('animationSpeed').addEventListener('input', (e) => {
+            config.animationSpeed = parseInt(e.target.value);
+            document.getElementById('speedValue').textContent = config.animationSpeed;
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', resetSimulation);
+
+        document.getElementById('toggleFluid').addEventListener('click', () => {
+            config.fluidFlow = !config.fluidFlow;
+            if (config.fluidFlow) {
+                initParticles();
+            }
+        });
+
+        // Initial setup
+        initParticles();
+        drawLayers();
+    </script>
+</body>
+</html>
