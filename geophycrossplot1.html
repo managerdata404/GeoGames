@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Seismic Properties Cross-plot Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            position: relative;
+            margin: 20px 0;
+            height: 400px;
+            width: 100%;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button, select {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        select {
+            background-color: white;
+            color: #333;
+            border: 1px solid #007bff;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .legend {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .legend-item {
+            margin: 5px 0;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+        }
+        .environment-info {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Seismic Properties Cross-plot Analysis</h1>
+        
+        <div class="controls">
+            <select id="environmentSelector" onchange="changeEnvironment()">
+                <option value="clastic">Clastic Environment</option>
+                <option value="carbonate">Carbonate Environment</option>
+            </select>
+            <select id="plotSelector" onchange="updateDisplayedPlots()">
+                <option value="all">Show All Cross-plots</option>
+                <option value="vpvs-pimp">Vp/Vs vs P-Impedance</option>
+                <option value="pr-pimp">Poisson Ratio vs P-Impedance</option>
+                <option value="pr-vpvs">Poisson Ratio vs Vp/Vs</option>
+            </select>
+            <button onclick="generateNewData()">Generate New Data</button>
+            <button onclick="toggleLithology()">Toggle Lithology Zones</button>
+        </div>
+
+        <div class="environment-info" id="environmentInfo">
+            <!-- Environment-specific information will be inserted here -->
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <canvas id="vpvsPlot"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="prPimpPlot"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="prVpvsPlot"></canvas>
+            </div>
+        </div>
+
+        <div class="legend" id="legendContainer">
+            <!-- Legend will be updated based on environment -->
+        </div>
+    </div>
+
+    <script>
+        let charts = {};
+        let showLithology = false;
+        let currentEnvironment = 'clastic';
+
+        const environmentConfigs = {
+            clastic: {
+                gasSand: {
+                    vpvsRange: [1.6, 1.8],
+                    pImpRange: [4000, 5000],
+                    color: 'rgba(0, 123, 255, 0.6)',
+                    label: 'Gas Sand'
+                },
+                oilSand: {
+                    vpvsRange: [1.8, 2.0],
+                    pImpRange: [5000, 6000],
+                    color: 'rgba(255, 193, 7, 0.6)',
+                    label: 'Oil Sand'
+                },
+                wetSand: {
+                    vpvsRange: [2.0, 2.2],
+                    pImpRange: [6000, 7000],
+                    color: 'rgba(139, 69, 19, 0.6)',
+                    label: 'Wet Sand'
+                },
+                shale: {
+                    vpvsRange: [2.2, 2.4],
+                    pImpRange: [5000, 7000],
+                    color: 'rgba(52, 58, 64, 0.6)',
+                    label: 'Shale'
+                },
+                info: `<h3>Clastic Environment Characteristics:</h3>
+                    <ul>
+                        <li>Lower P-impedance range due to lower matrix velocity</li>
+                        <li>Clear separation between sand and shale</li>
+                        <li>Hydrocarbon effects more pronounced in clean sandstones</li>
+                        <li>Vp/Vs ratio more sensitive to fluid changes</li>
+                    </ul>`
+            },
+            carbonate: {
+                gasPore: {
+                    vpvsRange: [1.7, 1.9],
+                    pImpRange: [6000, 7000],
+                    color: 'rgba(0, 123, 255, 0.6)',
+                    label: 'Gas-Filled Pores'
+                },
+                oilPore: {
+                    vpvsRange: [1.9, 2.1],
+                    pImpRange: [7000, 8000],
+                    color: 'rgba(255, 193, 7, 0.6)',
+                    label: 'Oil-Filled Pores'
+                },
+                wetPore: {
+                    vpvsRange: [2.1, 2.3],
+                    pImpRange: [8000, 9000],
+                    color: 'rgba(139, 69, 19, 0.6)',
+                    label: 'Water-Filled Pores'
+                },
+                tight: {
+                    vpvsRange: [1.8, 2.2],
+                    pImpRange: [9000, 11000],
+                    color: 'rgba(52, 58, 64, 0.6)',
+                    label: 'Tight Carbonate'
+                },
+                info: `<h3>Carbonate Environment Characteristics:</h3>
+                    <ul>
+                        <li>Higher P-impedance range due to higher matrix velocity</li>
+                        <li>More complex pore systems affecting acoustic properties</li>
+                        <li>Stronger dependence on porosity than fluid content</li>
+                        <li>Less distinct separation between lithology types</li>
+                    </ul>`
+            }
+        };
+
+        function generateRandomData(min, max, count) {
+            return Array.from({length: count}, () => 
+                min + Math.random() * (max - min)
+            );
+        }
+
+        function calculatePoissonRatio(vpvs) {
+            return (Math.pow(vpvs, 2) - 2) / (2 * (Math.pow(vpvs, 2) - 1));
+        }
+
+        function createDataset() {
+            const config = environmentConfigs[currentEnvironment];
+            const dataset = [];
+
+            for (const [key, value] of Object.entries(config)) {
+                if (key !== 'info') {
+                    const data = {
+                        vpvs: generateRandomData(value.vpvsRange[0], value.vpvsRange[1], 20),
+                        pImp: generateRandomData(value.pImpRange[0], value.pImpRange[1], 20),
+                        color: value.color,
+                        label: value.label
+                    };
+                    data.pr = data.vpvs.map(calculatePoissonRatio);
+                    dataset.push(data);
+                }
+            }
+
+            return dataset;
+        }
+
+        function updateEnvironmentInfo() {
+            document.getElementById('environmentInfo').innerHTML = 
+                environmentConfigs[currentEnvironment].info;
+            
+            // Update legend
+            const config = environmentConfigs[currentEnvironment];
+            const legendHtml = `
+                <h3>Interpretation Guide:</h3>
+                ${Object.entries(config)
+                    .filter(([key]) => key !== 'info')
+                    .map(([_, value]) => 
+                        `<div class="legend-item">
+                            <span style="color: ${value.color}>●</span> 
+                            ${value.label}: Vp/Vs ${value.vpvsRange[0]}-${value.vpvsRange[1]}, 
+                            P-imp ${value.pImpRange[0]}-${value.pImpRange[1]}
+                        </div>`
+                    ).join('')}
+            `;
+            document.getElementById('legendContainer').innerHTML = legendHtml;
+        }
+
+        function createChart(canvasId, datasets, xAxis, yAxis) {
+            const chartData = {
+                datasets: datasets.map(d => ({
+                    label: d.label,
+                    data: d[xAxis.property].map((x, i) => ({
+                        x: x,
+                        y: d[yAxis.property][i]
+                    })),
+                    backgroundColor: d.color,
+                    pointRadius: 6
+                }))
+            };
+
+            const config = {
+                type: 'scatter',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${yAxis.label} vs ${xAxis.label} (${currentEnvironment.charAt(0).toUpperCase() + currentEnvironment.slice(1)})`
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: xAxis.label
+                            },
+                            min: xAxis.min,
+                            max: xAxis.max
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: yAxis.label
+                            },
+                            min: yAxis.min,
+                            max: yAxis.max
+                        }
+                    }
+                }
+            };
+
+            if (charts[canvasId]) {
+                charts[canvasId].destroy();
+            }
+
+            charts[canvasId] = new Chart(
+                document.getElementById(canvasId),
+                config
+            );
+        }
+
+        function updateCharts(datasets) {
+            const xMaxPImp = currentEnvironment === 'clastic' ? 7500 : 11000;
+            
+            // Vp/Vs vs P-Impedance
+            createChart('vpvsPlot', datasets, 
+                {property: 'pImp', label: 'P-Impedance (m/s * g/cc)', min: 3500, max: xMaxPImp},
+                {property: 'vpvs', label: 'Vp/Vs Ratio', min: 1.5, max: 2.5}
+            );
+
+            // Poisson's Ratio vs P-Impedance
+            createChart('prPimpPlot', datasets,
+                {property: 'pImp', label: 'P-Impedance (m/s * g/cc)', min: 3500, max: xMaxPImp},
+                {property: 'pr', label: 'Poisson Ratio', min: 0.2, max: 0.4}
+            );
+
+            // Poisson's Ratio vs Vp/Vs
+            createChart('prVpvsPlot', datasets,
+                {property: 'vpvs', label: 'Vp/Vs Ratio', min: 1.5, max: 2.5},
+                {property: 'pr', label: 'Poisson Ratio', min: 0.2, max: 0.4}
+            );
+        }
+
+        function changeEnvironment() {
+            currentEnvironment = document.getElementById('environmentSelector').value;
+            updateEnvironmentInfo();
+            generateNewData();
+        }
+
+        function updateDisplayedPlots() {
+            const selection = document.getElementById('plotSelector').value;
+            const containers = document.getElementsByClassName('chart-container');
+            
+            for (let container of containers) {
+                container.style.display = 'none';
+            }
+
+            switch(selection) {
+                case 'all':
+                    for (let container of containers) {
+                        container.style.display = 'block';
+                    }
+                    break;
+                case 'vpvs-pimp':
+                    containers[0].style.display = 'block';
+                    break;
+                case 'pr-pimp':
+                    containers[1].style.display = 'block';
+                    break;
+                case 'pr-vpvs':
+                    containers[2].style.display = 'block';
+                    break;
+            }
+        }
+
+        function generateNewData() {
+            const datasets = createDataset();
+            updateCharts(datasets);
+        }
+
+        function toggleLithology() {
+            showLithology = !showLithology;
+            generateNewData();
+        }
+
+        // Initial setup
+        updateEnvironmentInfo();
+        generateNewData();
+        updateDisplayedPlots();
+    </script>
+</body>
+</html>
