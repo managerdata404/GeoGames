@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seismic Wave Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 16px;
+            font-family: Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .canvas-container {
+            position: relative;
+            margin-top: 16px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        #layerCanvas {
+            z-index: 1;
+        }
+        #waveCanvas {
+            z-index: 2;
+        }
+        #seismicCanvas {
+            z-index: 3;
+        }
+        .controls {
+            margin: 16px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        .control-group {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        label {
+            display: block;
+            margin: 8px 0;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Seismic Wave Simulation</h2>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h3>Layer Properties</h3>
+                <label>
+                    Layer 1 Velocity (m/s):
+                    <input type="range" id="vel1" min="1500" max="6000" value="2000" step="100">
+                    <span id="vel1Value">2000</span>
+                </label>
+                <label>
+                    Layer 2 Velocity (m/s):
+                    <input type="range" id="vel2" min="1500" max="6000" value="3000" step="100">
+                    <span id="vel2Value">3000</span>
+                </label>
+                <label>
+                    Layer 3 Velocity (m/s):
+                    <input type="range" id="vel3" min="1500" max="6000" value="4000" step="100">
+                    <span id="vel3Value">4000</span>
+                </label>
+            </div>
+            
+            <div class="control-group">
+                <h3>Simulation Properties</h3>
+                <label>
+                    Source X Position:
+                    <input type="range" id="sourceX" min="0" max="100" value="50" step="1">
+                    <span id="sourceXValue">50</span>
+                </label>
+                <label>
+                    Wave Amplitude:
+                    <input type="range" id="amplitudeScale" min="1" max="10" value="5" step="0.5">
+                    <span id="amplitudeValue">5</span>
+                </label>
+                <button id="simulate">Run Simulation</button>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="layerCanvas"></canvas>
+            <canvas id="waveCanvas"></canvas>
+            <canvas id="seismicCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const layerCanvas = document.getElementById('layerCanvas');
+        const waveCanvas = document.getElementById('waveCanvas');
+        const seismicCanvas = document.getElementById('seismicCanvas');
+        const layerCtx = layerCanvas.getContext('2d');
+        const waveCtx = waveCanvas.getContext('2d');
+        const seismicCtx = seismicCanvas.getContext('2d');
+        
+        let animationId = null;
+        let currentTime = 0;
+        let seismicData = [];
+        const timesamples = 200;
+        const traces = 50;
+
+        // Set canvas sizes
+        function resizeCanvases() {
+            const container = document.querySelector('.container');
+            const width = container.clientWidth;
+            const height = width * 0.8;
+            
+            [layerCanvas, waveCanvas, seismicCanvas].forEach(canvas => {
+                canvas.width = width;
+                canvas.height = height;
+            });
+            
+            document.querySelector('.canvas-container').style.height = height + 'px';
+        }
+        
+        resizeCanvases();
+        window.addEventListener('resize', resizeCanvases);
+
+        // Layer interface positions (as fraction of canvas height)
+        const interfaces = [0.3, 0.6];
+
+        // Draw geological layers
+        function drawLayers() {
+            const gradient = layerCtx.createLinearGradient(0, 0, 0, layerCanvas.height);
+            gradient.addColorStop(0, '#f0f0f0');
+            gradient.addColorStop(interfaces[0], '#f0f0f0');
+            gradient.addColorStop(interfaces[0], '#e0e0e0');
+            gradient.addColorStop(interfaces[1], '#e0e0e0');
+            gradient.addColorStop(interfaces[1], '#d0d0d0');
+            gradient.addColorStop(1, '#d0d0d0');
+            
+            layerCtx.fillStyle = gradient;
+            layerCtx.fillRect(0, 0, layerCanvas.width, layerCanvas.height);
+            
+            // Draw interface lines
+            interfaces.forEach(y => {
+                layerCtx.beginPath();
+                layerCtx.moveTo(0, y * layerCanvas.height);
+                layerCtx.lineTo(layerCanvas.width, y * layerCanvas.height);
+                layerCtx.strokeStyle = '#999';
+                layerCtx.stroke();
+            });
+        }
+
+        // Calculate wave position
+        function calculateWavePosition(time, sourceX, receiverX, depth, velocity) {
+            const dx = receiverX - sourceX;
+            const radius = time * velocity;
+            const angle = Math.atan2(depth, dx);
+            
+            return {
+                x: sourceX + Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius
+            };
+        }
+
+        // Draw propagating waves
+        function drawWaves(time) {
+            waveCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+            
+            const sourceX = (parseInt(document.getElementById('sourceX').value) / 100) * waveCanvas.width;
+            const velocities = [
+                parseInt(document.getElementById('vel1').value),
+                parseInt(document.getElementById('vel2').value),
+                parseInt(document.getElementById('vel3').value)
+            ];
+            
+            // Draw source point
+            waveCtx.beginPath();
+            waveCtx.arc(sourceX, 0, 5, 0, Math.PI * 2);
+            waveCtx.fillStyle = 'red';
+            waveCtx.fill();
+            
+            // Draw wave fronts
+            velocities.forEach((velocity, index) => {
+                const radius = time * velocity / 50; // Scale factor for visualization
+                
+                waveCtx.beginPath();
+                waveCtx.arc(sourceX, 0, radius, 0, Math.PI);
+                waveCtx.strokeStyle = `rgba(0, 0, 255, ${0.5 - index * 0.1})`;
+                waveCtx.stroke();
+                
+                // Draw reflected waves from interfaces
+                if (index < interfaces.length) {
+                    const interfaceY = interfaces[index] * waveCanvas.height;
+                    waveCtx.beginPath();
+                    waveCtx.arc(sourceX, interfaceY * 2, radius, -Math.PI, 0);
+                    waveCtx.strokeStyle = `rgba(255, 0, 0, ${0.5 - index * 0.1})`;
+                    waveCtx.stroke();
+                }
+            });
+        }
+
+        // Generate synthetic wavelet
+        function ricker(t, freq) {
+            const sigma = 1.0 / (freq * Math.PI);
+            const t0 = 6 * sigma;
+            const term = Math.PI * freq * (t - t0);
+            const term2 = term * term;
+            return (1 - 2 * term2) * Math.exp(-term2);
+        }
+
+        // Draw seismic traces
+        function drawSeismicTraces() {
+            const amplitudeScale = parseFloat(document.getElementById('amplitudeScale').value);
+            const traceSpacing = seismicCanvas.width / traces;
+            const timeSpacing = seismicCanvas.height / timesamples;
+            
+            seismicCtx.clearRect(0, 0, seismicCanvas.width, seismicCanvas.height);
+            
+            // Draw wiggle traces with variable area
+            seismicData.forEach((trace, traceIndex) => {
+                const x = traceIndex * traceSpacing;
+                
+                seismicCtx.beginPath();
+                seismicCtx.moveTo(x, 0);
+                
+                trace.forEach((amplitude, timeIndex) => {
+                    const y = timeIndex * timeSpacing;
+                    const scaledAmplitude = amplitude * amplitudeScale * traceSpacing;
+                    seismicCtx.lineTo(x + scaledAmplitude, y);
+                });
+                
+                seismicCtx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                seismicCtx.stroke();
+                
+                // Fill positive amplitudes
+                seismicCtx.beginPath();
+                seismicCtx.moveTo(x, 0);
+                
+                trace.forEach((amplitude, timeIndex) => {
+                    const y = timeIndex * timeSpacing;
+                    const scaledAmplitude = amplitude * amplitudeScale * traceSpacing;
+                    if (scaledAmplitude > 0) {
+                        seismicCtx.lineTo(x + scaledAmplitude, y);
+                    } else {
+                        seismicCtx.lineTo(x, y);
+                    }
+                });
+                
+                seismicCtx.lineTo(x, seismicCanvas.height);
+                seismicCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                seismicCtx.fill();
+            });
+        }
+
+        // Generate seismic data
+        function generateSeismicData() {
+            const sourceX = (parseInt(document.getElementById('sourceX').value) / 100) * seismicCanvas.width;
+            const velocities = [
+                parseInt(document.getElementById('vel1').value),
+                parseInt(document.getElementById('vel2').value),
+                parseInt(document.getElementById('vel3').value)
+            ];
+            
+            seismicData = [];
+            const traceSpacing = seismicCanvas.width / traces;
+            
+            for (let i = 0; i < traces; i++) {
+                const trace = new Array(timesamples).fill(0);
+                const receiverX = i * traceSpacing;
+                
+                // Add direct and reflected waves
+                interfaces.forEach((interface, idx) => {
+                    const depth = interface * seismicCanvas.height;
+                    const dx = Math.abs(receiverX - sourceX);
+                    const travelTime = Math.sqrt(dx * dx + depth * depth) / velocities[idx];
+                    const timeIndex = Math.floor(travelTime * 20); // Scale factor for visualization
+                    
+                    if (timeIndex < timesamples) {
+                        const amplitude = 1.0 / (idx + 1); // Decreasing amplitude with depth
+                        for (let t = 0; t < timesamples - timeIndex; t++) {
+                            trace[t + timeIndex] += amplitude * ricker(t * 0.004, 30);
+                        }
+                    }
+                });
+                
+                seismicData.push(trace);
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            currentTime += 0.1;
+            if (currentTime > 100) {
+                currentTime = 0;
+            }
+            
+            drawWaves(currentTime);
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // Event handlers
+        document.getElementById('simulate').addEventListener('click', () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            currentTime = 0;
+            generateSeismicData();
+            drawLayers();
+            drawSeismicTraces();
+            animate();
+        });
+
+        ['vel1', 'vel2', 'vel3', 'sourceX', 'amplitudeScale'].forEach(id => {
+            document.getElementById(id).addEventListener('input', e => {
+                document.getElementById(id + 'Value').textContent = e.target.value;
+            });
+        });
+
+        // Initial setup
+        drawLayers();
+        generateSeismicData();
+        drawSeismicTraces();
+        animate();
+    </script>
+</body>
+</html>
