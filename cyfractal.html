@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fractals with Cymatics Fragmentation</title>
+  <title>Cymatics with Fractal Fragmentation</title>
   <style>
     body {
       margin: 0;
@@ -13,6 +13,7 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      flex-direction: column;
     }
     canvas {
       display: block;
@@ -26,6 +27,8 @@
       font-family: Arial, sans-serif;
       text-align: center;
     }
+    #controls label,
+    #controls select,
     #controls input {
       margin: 5px;
     }
@@ -34,6 +37,13 @@
 <body>
   <canvas id="canvas"></canvas>
   <div id="controls">
+    <label for="fractalAlgorithm">Fractal Algorithm:</label>
+    <select id="fractalAlgorithm">
+      <option value="mandelbrot">Mandelbrot</option>
+      <option value="julia">Julia</option>
+      <option value="burningShip">Burning Ship</option>
+      <option value="tricorn">Tricorn</option>
+    </select>
     <label>Frequency: <input type="range" id="frequency" min="1" max="20" step="0.1" value="5"></label>
     <label>Amplitude: <input type="range" id="amplitude" min="1" max="10" step="0.1" value="5"></label>
     <label>Fractal Depth: <input type="range" id="fractalDepth" min="50" max="500" step="10" value="200"></label>
@@ -46,6 +56,7 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
+    const fractalAlgorithmSelect = document.getElementById("fractalAlgorithm");
     const frequencySlider = document.getElementById("frequency");
     const amplitudeSlider = document.getElementById("amplitude");
     const fractalDepthSlider = document.getElementById("fractalDepth");
@@ -63,6 +74,7 @@
       const amplitude = parseFloat(amplitudeSlider.value);
       const fractalDepth = parseInt(fractalDepthSlider.value);
       const splitSpeed = parseFloat(splitSpeedSlider.value);
+      const fractalAlgorithm = fractalAlgorithmSelect.value;
 
       const centerX = width / 2;
       const centerY = height / 2;
@@ -77,11 +89,35 @@
           const distance = Math.sqrt(dx * dx + dy * dy);
           const wave = Math.sin(frequency * distance * 0.01 - time) * amplitude;
 
-          // Fractal modulation with splitting effect
-          let zx = map(dx, -width / 2, width / 2, -2, 2);
-          let zy = map(dy, -height / 2, height / 2, -2, 2);
-          const cx = zx * Math.sin(splitSpeed * time);
-          const cy = zy * Math.cos(splitSpeed * time);
+          // Fractal calculation
+          let zx, zy, cx, cy;
+
+          switch (fractalAlgorithm) {
+            case "mandelbrot":
+              zx = map(dx, -width / 2, width / 2, -2, 2);
+              zy = map(dy, -height / 2, height / 2, -2, 2);
+              cx = zx;
+              cy = zy;
+              break;
+            case "julia":
+              zx = map(dx, -width / 2, width / 2, -2, 2);
+              zy = map(dy, -height / 2, height / 2, -2, 2);
+              cx = Math.cos(splitSpeed * time);
+              cy = Math.sin(splitSpeed * time);
+              break;
+            case "burningShip":
+              zx = Math.abs(map(dx, -width / 2, width / 2, -2, 2));
+              zy = Math.abs(map(dy, -height / 2, height / 2, -2, 2));
+              cx = zx;
+              cy = zy;
+              break;
+            case "tricorn":
+              zx = map(dx, -width / 2, width / 2, -2, 2);
+              zy = -map(dy, -height / 2, height / 2, -2, 2);
+              cx = zx;
+              cy = zy;
+              break;
+          }
 
           let iteration = 0;
           while (zx * zx + zy * zy < 4 && iteration < fractalDepth) {
