@@ -3,17 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cymatics with Fractal Fragmentation</title>
+  <title>Fractals Splitting with Cymatics</title>
   <style>
     body {
       margin: 0;
       background: black;
       overflow: hidden;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       flex-direction: column;
+      align-items: center;
     }
     canvas {
       display: block;
@@ -21,15 +19,10 @@
     #controls {
       position: absolute;
       bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
       color: white;
       font-family: Arial, sans-serif;
-      text-align: center;
     }
-    #controls label,
-    #controls select,
-    #controls input {
+    #controls label, #controls select, #controls input {
       margin: 5px;
     }
   </style>
@@ -83,39 +76,40 @@
 
       for (let x = 0; x < width; x++) {
         for (let y = 0; y < height; y++) {
-          // Cymatics standing wave
           const dx = x - centerX;
           const dy = y - centerY;
           const distance = Math.sqrt(dx * dx + dy * dy);
           const wave = Math.sin(frequency * distance * 0.01 - time) * amplitude;
 
-          // Fractal calculation
           let zx, zy, cx, cy;
 
           switch (fractalAlgorithm) {
             case "mandelbrot":
               zx = map(dx, -width / 2, width / 2, -2, 2);
               zy = map(dy, -height / 2, height / 2, -2, 2);
-              cx = zx;
-              cy = zy;
+              cx = zx + Math.cos(splitSpeed * time) * wave;
+              cy = zy + Math.sin(splitSpeed * time) * wave;
               break;
+
             case "julia":
               zx = map(dx, -width / 2, width / 2, -2, 2);
               zy = map(dy, -height / 2, height / 2, -2, 2);
-              cx = Math.cos(splitSpeed * time);
-              cy = Math.sin(splitSpeed * time);
+              cx = Math.cos(splitSpeed * time) + wave;
+              cy = Math.sin(splitSpeed * time) + wave;
               break;
+
             case "burningShip":
               zx = Math.abs(map(dx, -width / 2, width / 2, -2, 2));
               zy = Math.abs(map(dy, -height / 2, height / 2, -2, 2));
-              cx = zx;
-              cy = zy;
+              cx = zx + Math.cos(splitSpeed * time) * wave;
+              cy = zy + Math.sin(splitSpeed * time) * wave;
               break;
+
             case "tricorn":
               zx = map(dx, -width / 2, width / 2, -2, 2);
               zy = -map(dy, -height / 2, height / 2, -2, 2);
-              cx = zx;
-              cy = zy;
+              cx = zx + Math.sin(splitSpeed * time) * wave;
+              cy = zy - Math.cos(splitSpeed * time) * wave;
               break;
           }
 
@@ -127,13 +121,9 @@
             iteration++;
           }
 
-          // Modulate fractal intensity with cymatic wave
           const modulatedValue = iteration * Math.abs(wave);
-
-          // Map to RGB color
           const colorValue = map(modulatedValue, 0, fractalDepth, 0, 255);
 
-          // Set pixel color
           ctx.fillStyle = `rgb(${colorValue}, ${255 - colorValue}, ${colorValue * 0.5})`;
           ctx.fillRect(x, y, 1, 1);
         }
