@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cymatics with Fractal Modulation</title>
+  <title>Cymatics with Fractal Edges</title>
   <style>
     body {
       margin: 0;
@@ -34,8 +34,8 @@
 <body>
   <canvas id="cymaticsCanvas"></canvas>
   <div id="controls">
-    <label>Frequency: <input type="range" id="frequency" min="0.1" max="5" step="0.1" value="2"></label>
-    <label>Amplitude: <input type="range" id="amplitude" min="0.5" max="5" step="0.1" value="1.5"></label>
+    <label>Frequency: <input type="range" id="frequency" min="1" max="20" step="0.1" value="5"></label>
+    <label>Amplitude: <input type="range" id="amplitude" min="1" max="10" step="0.1" value="5"></label>
     <label>Fractal Depth: <input type="range" id="fractalDepth" min="50" max="500" step="10" value="200"></label>
   </div>
 
@@ -53,7 +53,7 @@
       return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
     }
 
-    function generateCymaticsWithFractal(time) {
+    function generateCymaticsWithFractalEdges(time) {
       const width = canvas.width;
       const height = canvas.height;
 
@@ -61,22 +61,26 @@
       const amplitude = parseFloat(amplitudeSlider.value);
       const fractalDepth = parseInt(fractalDepthSlider.value);
 
+      const centerX = width / 2;
+      const centerY = height / 2;
+
       const imageData = ctx.createImageData(width, height);
       const data = imageData.data;
 
       for (let x = 0; x < width; x++) {
         for (let y = 0; y < height; y++) {
-          // Cymatic standing wave patterns
-          const wave1 = Math.sin(frequency * x * 0.01 + time);
-          const wave2 = Math.sin(frequency * y * 0.01 + time);
-          const cymaticsPattern = amplitude * wave1 * wave2;
+          // Cymatics pattern (concentric standing waves)
+          const dx = x - centerX;
+          const dy = y - centerY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const wave = Math.sin(frequency * distance * 0.01 - time) * amplitude;
 
-          // Fractal modulation (based on Mandelbrot set)
-          let zx = map(x, 0, width, -2, 2);
-          let zy = map(y, 0, height, -2, 2);
-          let cx = zx, cy = zy;
+          // Fractal edge decoration
+          let zx = map(dx, -width / 2, width / 2, -2, 2);
+          let zy = map(dy, -height / 2, height / 2, -2, 2);
+          const cx = zx, cy = zy;
+
           let iteration = 0;
-
           while (zx * zx + zy * zy < 4 && iteration < fractalDepth) {
             const temp = zx * zx - zy * zy + cx;
             zy = 2 * zx * zy + cy;
@@ -84,11 +88,11 @@
             iteration++;
           }
 
-          // Combine cymatics and fractal
-          const modulatedValue = cymaticsPattern * iteration;
+          // Modulate fractal intensity with cymatic wave
+          const modulatedValue = iteration * Math.abs(wave);
 
           // Map to RGB color
-          const colorValue = map(modulatedValue, -fractalDepth, fractalDepth, 0, 255);
+          const colorValue = map(modulatedValue, 0, fractalDepth, 0, 255);
           const pixelIndex = (x + y * width) * 4;
 
           data[pixelIndex] = colorValue; // Red
@@ -104,7 +108,7 @@
     let time = 0;
     function animate() {
       time += 0.05;
-      generateCymaticsWithFractal(time);
+      generateCymaticsWithFractalEdges(time);
       requestAnimationFrame(animate);
     }
 
