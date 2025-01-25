@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cymatics Fractals</title>
+  <title>Cymatics Fractals Grid</title>
   <style>
     body {
       margin: 0;
@@ -54,7 +54,8 @@
     const speedSlider = document.getElementById("speed");
 
     const particles = [];
-    const maxParticles = 5000;
+    const gridRows = 32; // Rows of particles
+    const gridCols = 32; // Columns of particles
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
 
@@ -63,8 +64,15 @@
     }
 
     function generateParticles() {
-      for (let i = 0; i < maxParticles; i++) {
-        particles.push(createParticle(centerX, centerY, { r: 255, g: 255, b: 255 }));
+      const spacingX = canvas.width / gridCols;
+      const spacingY = canvas.height / gridRows;
+
+      for (let i = 0; i < gridRows; i++) {
+        for (let j = 0; j < gridCols; j++) {
+          const x = j * spacingX + spacingX / 2;
+          const y = i * spacingY + spacingY / 2;
+          particles.push(createParticle(x, y, { r: 255, g: 255, b: 255 }));
+        }
       }
     }
 
@@ -126,7 +134,7 @@
       for (const particle of particles) {
         ctx.fillStyle = `rgb(${particle.color.r}, ${particle.color.g}, ${particle.color.b})`;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 2, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
         ctx.fill();
       }
     }
