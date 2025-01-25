@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fractal Cymatics Particle Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #1a1a2e;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        #simulation-container { 
+            width: 100%; 
+            height: 100vh; 
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="simulation-container"></div>
+    <div id="controls">
+        <div class="slider-container">
+            <label>Frequency</label>
+            <input type="range" id="frequencySlider" min="0.1" max="10" step="0.1" value="1">
+        </div>
+        <div class="slider-container">
+            <label>Fractal Intensity</label>
+            <input type="range" id="intensitySlider" min="0" max="1" step="0.1" value="0.5">
+        </div>
+        <div class="slider-container">
+            <label>Fractal Algorithm</label>
+            <select id="fractalType">
+                <option value="mandelbrot">Mandelbrot Set</option>
+                <option value="julia">Julia Set</option>
+                <option value="burning-ship">Burning Ship Fractal</option>
+                <option value="newton">Newton Fractal</option>
+            </select>
+        </div>
+        <div class="slider-container">
+            <label>Cymatics Mode</label>
+            <select id="cymaticsMode">
+                <option value="wave">Wave Propagation</option>
+                <option value="resonance">Resonance</option>
+                <option value="interference">Wave Interference</option>
+                <option value="standing">Standing Wave</option>
+            </select>
+        </div>
+        <div class="btn-container">
+            <button id="startBtn">Start Simulation</button>
+            <button id="resetBtn">Reset</button>
+            <button id="viewBtn">Change View</button>
+        </div>
+    </div>
+
+    <script>
+        class FractalCymaticsSimulation {
+            constructor(container) {
+                // Scene setup
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                container.appendChild(this.renderer.domElement);
+
+                // Simulation parameters
+                this.particleCount = 10000;
+                this.isSimulating = false;
+                this.time = 0;
+
+                // Fractal and cymatics parameters
+                this.frequency = 1;
+                this.intensityFactor = 0.5;
+                this.currentFractalType = 'mandelbrot';
+                this.cymaticsMode = 'wave';
+
+                // Particle system setup
+                this.initParticleSystem();
+                this.setupCamera();
+                this.setupEventListeners();
+                this.animate();
+            }
+
+            initParticleSystem() {
+                // Create particle geometry
+                this.particleGeometry = new THREE.BufferGeometry();
+                this.particleMaterial = new THREE.PointsMaterial({ 
+                    size: 0.05, 
+                    vertexColors: true,
+                    blending: THREE.AdditiveBlending
+                });
+
+                // Generate initial particle positions
+                const positions = new Float32Array(this.particleCount * 3);
+                const colors = new Float32Array(this.particleCount * 3);
+
+                // Distribute particles across a complex fractal-inspired grid
+                for (let i = 0; i < this.particleCount; i++) {
+                    // Normalized coordinates
+                    const x = (Math.random() * 2 - 1) * 3;
+                    const z = (Math.random() * 2 - 1) * 3;
+                    
+                    positions[i*3] = x;
+                    positions[i*3 + 1] = 0; // Initial flat surface
+                    positions[i*3 + 2] = z;
+
+                    // Initial random colors
+                    colors[i*3] = Math.random();
+                    colors[i*3 + 1] = Math.random();
+                    colors[i*3 + 2] = Math.random();
+                }
+
+                this.particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                this.particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                // Create particle system
+                this.particleSystem = new THREE.Points(this.particleGeometry, this.particleMaterial);
+                this.scene.add(this.particleSystem);
+            }
+
+            // Advanced Fractal Height Generation Methods
+            generateFractalHeight(x, z) {
+                switch(this.currentFractalType) {
+                    case 'mandelbrot':
+                        return this.mandelbrotHeight(x, z);
+                    case 'julia':
+                        return this.juliaSetHeight(x, z);
+                    case 'burning-ship':
+                        return this.burningShipHeight(x, z);
+                    case 'newton':
+                        return this.newtonFractalHeight(x, z);
+                    default:
+                        return 0;
+                }
+            }
+
+            mandelbrotHeight(x, z) {
+                const maxIterations = 50;
+                let zx = 0, zy = 0;
+                let iteration = 0;
+
+                while (zx * zx + zy * zy < 4 && iteration < maxIterations) {
+                    const temp = zx * zx - zy * zy + x;
+                    zy = 2 * zx * zy + z;
+                    zx = temp;
+                    iteration++;
+                }
+
+                return iteration / maxIterations * this.intensityFactor;
+            }
+
+            juliaSetHeight(x, z) {
+                const c_real = -0.4, c_imag = 0.6;
+                let zx = x, zy = z;
+                const maxIterations = 50;
+                let iteration = 0;
+
+                while (zx * zx + zy * zy < 4 && iteration < maxIterations) {
+                    const temp = zx * zx - zy * zy + c_real;
+                    zy = 2 * zx * zy + c_imag;
+                    zx = temp;
+                    iteration++;
+                }
+
+                return iteration / maxIterations * this.intensityFactor;
+            }
+
+            burningShipHeight(x, z) {
+                const maxIterations = 50;
+                let zx = 0, zy = 0;
+                let iteration = 0;
+
+                while (zx * zx + zy * zy < 4 && iteration < maxIterations) {
+                    zx = Math.abs(zx);
+                    zy = Math.abs(zy);
+                    const temp = zx * zx - zy * zy + x;
+                    zy = 2 * zx * zy + z;
+                    zx = temp;
+                    iteration++;
+                }
+
+                return iteration / maxIterations * this.intensityFactor;
+            }
+
+            newtonFractalHeight(x, z) {
+                // Newton's method-inspired fractal height
+                let zx = x, zy = z;
+                const maxIterations = 20;
+                let iteration = 0;
+
+                while (iteration < maxIterations) {
+                    const r = zx * zx + zy * zy;
+                    const nx = (2 * zx * r - zx) / (3 * r);
+                    const ny = (2 * zy * r - zy) / (3 * r);
+                    zx -= nx;
+                    zy -= ny;
+                    iteration++;
+                }
+
+                return Math.abs(Math.sin(zx) * Math.cos(zy)) * this.intensityFactor;
+            }
+
+            applyCymaticsWave() {
+                if (!this.isSimulating) return;
+
+                const positions = this.particleGeometry.getAttribute('position').array;
+                const colors = this.particleGeometry.getAttribute('color').array;
+
+                // Increment time for wave animation
+                this.time += 0.1 * this.frequency;
+
+                for (let i = 0; i < positions.length; i += 3) {
+                    const x = positions[i];
+                    const z = positions[i + 2];
+
+                    // Generate fractal-based height
+                    const fractalHeight = this.generateFractalHeight(x, z);
+
+                    // Apply different cymatics modes
+                    let waveHeight = 0;
+                    switch(this.cymaticsMode) {
+                        case 'wave':
+                            // Standard wave propagation
+                            waveHeight = Math.sin(x * this.frequency + this.time) * 
+                                         Math.cos(z * this.frequency + this.time) * 
+                                         this.intensityFactor;
+                            break;
+                        case 'resonance':
+                            // Resonance with fractal influence
+                            waveHeight = fractalHeight * 
+                                         Math.sin(x * this.frequency + this.time) * 
+                                         Math.cos(z * this.frequency + this.time);
+                            break;
+                        case 'interference':
+                            // Wave interference pattern
+                            waveHeight = Math.sin(x * this.frequency + this.time) * 
+                                         Math.sin(z * this.frequency + this.time) * 
+                                         fractalHeight;
+                            break;
+                        case 'standing':
+                            // Standing wave with fractal modulation
+                            waveHeight = fractalHeight * 
+                                         Math.sin(Math.sqrt(x*x + z*z) * this.frequency + this.time);
+                            break;
+                    }
+
+                    // Combine fractal height with wave dynamics
+                    positions[i + 1] = fractalHeight + waveHeight;
+
+                    // Dynamic color based on height and position
+                    colors[i] = Math.abs(Math.sin(positions[i + 1] * 10));
+                    colors[i + 1] = Math.abs(Math.cos(positions[i + 1] * 5));
+                    colors[i + 2] = Math.abs(Math.tan(positions[i + 1] * 3));
+                }
+
+                this.particleGeometry.attributes.position.needsUpdate = true;
+                this.particleGeometry.attributes.color.needsUpdate = true;
+            }
+
+            setupCamera() {
+                this.camera.position.set(0, 3, 5);
+                this.camera.lookAt(0, 0, 0);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.applyCymaticsWave();
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            setupEventListeners() {
+                // Frequency slider
+                document.getElementById('frequencySlider').addEventListener('input', (e) => {
+                    this.frequency = parseFloat(e.target.value);
+                });
+
+                // Intensity slider
+                document.getElementById('intensitySlider').addEventListener('input', (e) => {
+                    this.intensityFactor = parseFloat(e.target.value);
+                });
+
+                // Fractal type selection
+                document.getElementById('fractalType').addEventListener('change', (e) => {
+                    this.currentFractalType = e.target.value;
+                });
+
+                // Cymatics mode selection
+                document.getElementById('cymaticsMode').addEventListener('change', (e) => {
+                    this.cymaticsMode = e.target.value;
+                });
+
+                // Start/Pause button
+                document.getElementById('startBtn').addEventListener('click', () => {
+                    this.isSimulating = !this.isSimulating;
+                    document.getElementById('startBtn').textContent = 
+                        this.isSimulating ? 'Pause' : 'Start Simulation';
+                });
+
+                // Reset button
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.time = 0;
+                    this.initParticleSystem();
+                    this.isSimulating = false;
+                    document.getElementById('startBtn').textContent = 'Start Simulation';
+                });
+
+                // View change button
+                document.getElementById('viewBtn').addEventListener('click', () => {
+                    const currentPosition = this.camera.position;
+                    if (Math.abs(currentPosition.z) > Math.abs(currentPosition.y)) {
+                        // Switch to top view
+                        this.camera.position.set(0, 5, 0);
+                        this.camera.lookAt(0, 0, 0);
+                    } else {
+                        // Switch back to side view
+                        this.camera.position.set(0, 3, 5);
+                        this.camera.lookAt(0, 0, 0);
+                    }
+                });
+            }
+        }
+
+        // Initialize simulation on page load
+        window.addEventListener('load', () => {
+            const container = document.getElementById('simulation-container');
+            new FractalCymaticsSimulation(container);
+        });
+    </script>
+</body>
+</html>
