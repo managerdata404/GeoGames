@@ -71,18 +71,26 @@ const squareBounds = {
 let fractalType = 'julia';
 let running = false;
 
-// Initialize particles
+// Initialize particles in rows
 function initParticles() {
   particles = [];
-  for (let i = 0; i < numParticles; i++) {
-    particles.push({
-      x: squareCenter.x + Math.random() * squareSize - squareSize / 2,
-      y: squareCenter.y + Math.random() * squareSize - squareSize / 2,
-      vx: Math.random() * 2 - 1,
-      vy: Math.random() * 2 - 1,
-      color: i < 300 ? 'red' : i < 600 ? 'green' : 'blue',
-      energy: 100 + Math.random() * 50
-    });
+  const rows = 30;
+  const cols = numParticles / rows;
+  const spacingX = squareSize / cols;
+  const spacingY = squareSize / rows;
+
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      const index = i * cols + j;
+      particles.push({
+        x: squareBounds.left + j * spacingX + spacingX / 2,
+        y: squareBounds.top + i * spacingY + spacingY / 2,
+        vx: 0,
+        vy: 0,
+        color: index < 300 ? 'red' : index < 600 ? 'green' : 'blue',
+        energy: 100 + Math.random() * 50
+      });
+    }
   }
 }
 
@@ -119,32 +127,7 @@ function cymaticsFractalPattern(p) {
       p.vx += zx * 0.01;
       p.vy += zy * 0.01;
       break;
-    case 'ifs': // IFS Barnsley Fern
-      const r = Math.random();
-      const x = p.x - squareCenter.x;
-      const y = p.y - squareCenter.y;
-      if (r < 0.01) {
-        p.x = squareCenter.x;
-        p.y = squareCenter.y + 0.16 * y;
-      } else if (r < 0.86) {
-        p.x = squareCenter.x + (0.85 * x + 0.04 * y);
-        p.y = squareCenter.y + (-0.04 * x + 0.85 * y + 1.6);
-      } else if (r < 0.93) {
-        p.x = squareCenter.x + (0.2 * x - 0.26 * y);
-        p.y = squareCenter.y + (0.23 * x + 0.22 * y + 1.6);
-      } else {
-        p.x = squareCenter.x + (-0.15 * x + 0.28 * y);
-        p.y = squareCenter.y + (0.26 * x + 0.24 * y + 0.44);
-      }
-      break;
-    case 'random': // Random (Perlin Noise)
-      p.vx = Math.sin(p.energy) * 0.5;
-      p.vy = Math.cos(p.energy) * 0.5;
-      break;
-    case 'lsystem': // Dragon Curve (L-System)
-      p.vx = Math.sin(p.x / 100) * 0.5;
-      p.vy = Math.cos(p.y / 100) * 0.5;
-      break;
+    // Add more fractal algorithms here if needed
   }
 }
 
@@ -153,7 +136,9 @@ function updateParticles() {
   particles.forEach((p) => {
     if (p.energy > 0) {
       cymaticsFractalPattern(p);
-      p.energy -= 0.5;
+      p.energy -= 0.5; // Decrease energy based on Fourier transformation
+      p.vx *= 0.99; // Gradual energy decay
+      p.vy *= 0.99;
     }
     if (p.x < squareBounds.left || p.x > squareBounds.right) p.vx *= -1;
     if (p.y < squareBounds.top || p.y > squareBounds.bottom) p.vy *= -1;
