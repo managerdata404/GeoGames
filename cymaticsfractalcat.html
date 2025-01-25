@@ -9,7 +9,6 @@
       margin: 0;
       overflow: hidden;
       background-color: black;
-      color: white;
       font-family: Arial, sans-serif;
     }
     #controls {
@@ -17,6 +16,7 @@
       top: 10px;
       left: 10px;
       background: rgba(0, 0, 0, 0.7);
+      color: white;
       padding: 10px;
       border-radius: 5px;
       z-index: 10;
@@ -83,8 +83,8 @@ function fractalPatterns(particle) {
   switch (fractalType) {
     case 'ifs': // IFS (Barnsley Fern)
       const r = Math.random();
-      const x = particle.x / squareSize * 2 - 1;
-      const y = particle.y / squareSize * 2 - 1;
+      const x = (particle.x - squareCenter.x) / squareSize;
+      const y = (particle.y - squareCenter.y) / squareSize;
       if (r < 0.01) {
         particle.x = squareCenter.x;
         particle.y = squareCenter.y + 0.16 * y * squareSize;
@@ -100,16 +100,21 @@ function fractalPatterns(particle) {
       }
       break;
     case 'escape': // Mandelbrot Set
-      // Example placeholder
+      // Example placeholder for Mandelbrot
+      particle.vx += Math.random() * 0.2 - 0.1;
+      particle.vy += Math.random() * 0.2 - 0.1;
       break;
     case 'random': // Perlin Noise
-      // Example placeholder
+      particle.vx = Math.cos(particle.energy) * 2;
+      particle.vy = Math.sin(particle.energy) * 2;
       break;
     case 'lsystem': // Dragon Curve
-      // Example placeholder
+      particle.vx = Math.sin(particle.x / squareSize) * 2;
+      particle.vy = Math.cos(particle.y / squareSize) * 2;
       break;
     case 'attractor': // Lorenz Attractor
-      // Example placeholder
+      particle.vx += Math.sin(particle.energy) * 0.1;
+      particle.vy -= Math.cos(particle.energy) * 0.1;
       break;
   }
 }
@@ -123,15 +128,26 @@ function updateParticles() {
     }
     if (p.x < squareBounds.left || p.x > squareBounds.right) p.vx *= -1;
     if (p.y < squareBounds.top || p.y > squareBounds.bottom) p.vy *= -1;
+    p.x += p.vx;
+    p.y += p.vy;
   });
 }
 
 // Render Particles
 function renderParticles() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // Draw square boundary
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(
+    squareBounds.left,
+    squareBounds.top,
+    squareSize,
+    squareSize
+  );
+
+  // Draw particles
   particles.forEach((p) => {
     ctx.fillStyle = p.color;
     ctx.beginPath();
@@ -162,6 +178,7 @@ document.getElementById('reset').addEventListener('click', () => {
 
 document.getElementById('fractalSelect').addEventListener('change', (e) => {
   fractalType = e.target.value;
+  initParticles(); // Reinitialize particles for the selected fractal
 });
 
 initParticles();
