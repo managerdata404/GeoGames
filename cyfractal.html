@@ -7,8 +7,8 @@
   <style>
     body {
       margin: 0;
-      background: black;
       overflow: hidden;
+      background: black;
     }
     canvas {
       display: block;
@@ -21,21 +21,16 @@
       color: white;
       font-family: Arial, sans-serif;
     }
-    #controls button, #controls select, #controls label, #controls input {
+    #controls button {
       margin: 5px;
+      padding: 10px 15px;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
   <div id="controls">
-    <label for="fractalAlgorithm">Fractal Algorithm:</label>
-    <select id="fractalAlgorithm">
-      <option value="julia">Julia</option>
-      <option value="mandelbrot">Mandelbrot</option>
-      <option value="burningShip">Burning Ship</option>
-      <option value="tricorn">Tricorn</option>
-    </select>
     <button id="startButton">Start</button>
     <button id="resetButton">Reset</button>
   </div>
@@ -46,97 +41,89 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const fractalAlgorithmSelect = document.getElementById("fractalAlgorithm");
-    const startButton = document.getElementById("startButton");
-    const resetButton = document.getElementById("resetButton");
-
     const particles = [];
-    const gridRows = 40;
-    const gridCols = 40;
+    const gridSize = 30; // Grid size (total particles: gridSize * gridSize)
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const particleRadius = 3;
+    const colors = ["red", "green", "blue"];
     let isRunning = false;
 
-    // Generate particles in a grid
+    // Initialize particles
     function generateParticles() {
       particles.length = 0;
-      const spacingX = canvas.width / gridCols;
-      const spacingY = canvas.height / gridRows;
+      const spacingX = canvas.width / gridSize;
+      const spacingY = canvas.height / gridSize;
 
-      for (let i = 0; i < gridRows; i++) {
-        for (let j = 0; j < gridCols; j++) {
-          const x = j * spacingX + spacingX / 2;
-          const y = i * spacingY + spacingY / 2;
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          const color = colors[(i + j) % 3];
           particles.push({
-            x,
-            y,
+            x: j * spacingX + spacingX / 2,
+            y: i * spacingY + spacingY / 2,
             vx: 0,
             vy: 0,
             energy: 1,
-            color: { r: 255, g: 255, b: 255 },
+            color: color,
           });
         }
       }
     }
 
-    // Update particles based on cymatics and fractal patterns
+    // RGB blending function
+    function blendColors(color1, color2) {
+      const toRGB = (color) => {
+        if (color === "red") return [255, 0, 0];
+        if (color === "green") return [0, 255, 0];
+        if (color === "blue") return [0, 0, 255];
+        return [0, 0, 0];
+      };
+
+      const [r1, g1, b1] = toRGB(color1);
+      const [r2, g2, b2] = toRGB(color2);
+      return `rgb(${Math.min(r1 + r2, 255)}, ${Math.min(g1 + g2, 255)}, ${Math.min(b1 + b2, 255)})`;
+    }
+
+    // Update particles
     function updateParticles(time) {
-      const fractalAlgorithm = fractalAlgorithmSelect.value;
-
       for (let particle of particles) {
-        if (particle.energy <= 0) continue;
-
         const dx = particle.x - centerX;
         const dy = particle.y - centerY;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // Cymatics wave influence
-        const wave = Math.sin(0.02 * distance - time) * 20;
+        if (distance > 0) {
+          // Apply cymatics-like movement with Fourier transform
+          const angle = Math.atan2(dy, dx);
+          const wave = Math.sin(distance * 0.05 - time * 0.01) * 10;
 
-        // Fractal pattern movement
-        let fx, fy;
-        switch (fractalAlgorithm) {
-          case "julia":
-            fx = Math.cos(wave + 0.01 * dx);
-            fy = Math.sin(wave + 0.01 * dy);
-            break;
-          case "mandelbrot":
-            fx = Math.sin(wave - 0.01 * dx);
-            fy = Math.cos(wave - 0.01 * dy);
-            break;
-          case "burningShip":
-            fx = Math.abs(Math.sin(wave + 0.01 * dx));
-            fy = Math.abs(Math.cos(wave - 0.01 * dy));
-            break;
-          case "tricorn":
-            fx = Math.sin(wave + 0.01 * dx);
-            fy = -Math.cos(wave - 0.01 * dy);
-            break;
+          particle.vx += Math.cos(angle + wave) * 0.5 * particle.energy;
+          particle.vy += Math.sin(angle + wave) * 0.5 * particle.energy;
         }
 
-        // Apply velocity and update position
-        particle.vx += fx * 0.1;
-        particle.vy += fy * 0.1;
+        // Energy dissipation
+        particle.energy *= 0.99;
+
+        // Update position
         particle.x += particle.vx;
         particle.y += particle.vy;
 
-        // Energy dissipation
-        particle.energy -= 0.005;
+        // Slow down particles
+        particle.vx *= 0.98;
+        particle.vy *= 0.98;
+      }
 
-        // RGB blending for overlapping particles
-        for (let other of particles) {
-          const dist = Math.sqrt((particle.x - other.x) ** 2 + (particle.y - other.y) ** 2);
-          if (dist < particleRadius * 2) {
-            particle.color.r = (particle.color.r + other.color.r) / 2;
-            particle.color.g = (particle.color.g + other.color.g) / 2;
-            particle.color.b = (particle.color.b + other.color.b) / 2;
+      // Apply RGB blending when particles overlap
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const p1 = particles[i];
+          const p2 = particles[j];
+
+          if (
+            Math.abs(p1.x - p2.x) < 5 &&
+            Math.abs(p1.y - p2.y) < 5
+          ) {
+            p1.color = blendColors(p1.color, p2.color);
           }
         }
-
-        // Boundary bounce
-        if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
-        if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
       }
     }
 
@@ -145,39 +132,38 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       for (let particle of particles) {
-        const { r, g, b } = particle.color;
-        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillStyle = particle.color;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particleRadius, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
     // Animation loop
-    function animate() {
+    function animate(time) {
       if (!isRunning) return;
 
-      const time = performance.now() * 0.002;
       updateParticles(time);
       drawParticles();
+
       requestAnimationFrame(animate);
     }
 
     // Event listeners
-    startButton.addEventListener("click", () => {
+    document.getElementById("startButton").addEventListener("click", () => {
       if (!isRunning) {
         isRunning = true;
-        animate();
+        animate(performance.now());
       }
     });
 
-    resetButton.addEventListener("click", () => {
+    document.getElementById("resetButton").addEventListener("click", () => {
       isRunning = false;
       generateParticles();
       drawParticles();
     });
 
-    // Initialize
+    // Initialize particles
     generateParticles();
     drawParticles();
   </script>
