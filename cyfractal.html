@@ -9,9 +9,6 @@
       margin: 0;
       background: black;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
     }
     canvas {
       display: block;
@@ -19,10 +16,12 @@
     #controls {
       position: absolute;
       bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       color: white;
       font-family: Arial, sans-serif;
     }
-    #controls button, #controls label, #controls select, #controls input {
+    #controls button, #controls select, #controls label, #controls input {
       margin: 5px;
     }
   </style>
@@ -37,9 +36,6 @@
       <option value="burningShip">Burning Ship</option>
       <option value="tricorn">Tricorn</option>
     </select>
-    <label>Frequency: <input type="range" id="frequency" min="1" max="20" step="0.1" value="5"></label>
-    <label>Amplitude: <input type="range" id="amplitude" min="1" max="10" step="0.1" value="5"></label>
-    <label>Particle Speed: <input type="range" id="speed" min="0.1" max="2" step="0.1" value="1"></label>
     <button id="startButton">Start</button>
     <button id="resetButton">Reset</button>
   </div>
@@ -51,32 +47,20 @@
     canvas.height = window.innerHeight;
 
     const fractalAlgorithmSelect = document.getElementById("fractalAlgorithm");
-    const frequencySlider = document.getElementById("frequency");
-    const amplitudeSlider = document.getElementById("amplitude");
-    const speedSlider = document.getElementById("speed");
     const startButton = document.getElementById("startButton");
     const resetButton = document.getElementById("resetButton");
 
-    let particles = [];
-    const gridRows = 32;
-    const gridCols = 32;
+    const particles = [];
+    const gridRows = 40;
+    const gridCols = 40;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
+    const particleRadius = 3;
     let isRunning = false;
 
-    function createParticle(x, y) {
-      return {
-        x,
-        y,
-        vx: 0,
-        vy: 0,
-        energy: 1,
-        color: { r: 255, g: 255, b: 255 },
-      };
-    }
-
+    // Generate particles in a grid
     function generateParticles() {
-      particles = [];
+      particles.length = 0;
       const spacingX = canvas.width / gridCols;
       const spacingY = canvas.height / gridRows;
 
@@ -84,15 +68,20 @@
         for (let j = 0; j < gridCols; j++) {
           const x = j * spacingX + spacingX / 2;
           const y = i * spacingY + spacingY / 2;
-          particles.push(createParticle(x, y));
+          particles.push({
+            x,
+            y,
+            vx: 0,
+            vy: 0,
+            energy: 1,
+            color: { r: 255, g: 255, b: 255 },
+          });
         }
       }
     }
 
+    // Update particles based on cymatics and fractal patterns
     function updateParticles(time) {
-      const frequency = parseFloat(frequencySlider.value);
-      const amplitude = parseFloat(amplitudeSlider.value);
-      const speed = parseFloat(speedSlider.value);
       const fractalAlgorithm = fractalAlgorithmSelect.value;
 
       for (let particle of particles) {
@@ -102,42 +91,43 @@
         const dy = particle.y - centerY;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // Cymatics wave motion
-        const wave = Math.sin(frequency * distance * 0.01 - time) * amplitude;
+        // Cymatics wave influence
+        const wave = Math.sin(0.02 * distance - time) * 20;
 
-        // Fractal motion
+        // Fractal pattern movement
         let fx, fy;
         switch (fractalAlgorithm) {
           case "julia":
-            fx = Math.cos(speed * time + wave);
-            fy = Math.sin(speed * time + wave);
+            fx = Math.cos(wave + 0.01 * dx);
+            fy = Math.sin(wave + 0.01 * dy);
             break;
           case "mandelbrot":
-            fx = Math.sin(speed * time - wave);
-            fy = Math.cos(speed * time - wave);
+            fx = Math.sin(wave - 0.01 * dx);
+            fy = Math.cos(wave - 0.01 * dy);
             break;
           case "burningShip":
-            fx = Math.abs(Math.sin(speed * time + wave));
-            fy = Math.abs(Math.cos(speed * time - wave));
+            fx = Math.abs(Math.sin(wave + 0.01 * dx));
+            fy = Math.abs(Math.cos(wave - 0.01 * dy));
             break;
           case "tricorn":
-            fx = Math.sin(speed * time + wave);
-            fy = -Math.cos(speed * time - wave);
+            fx = Math.sin(wave + 0.01 * dx);
+            fy = -Math.cos(wave - 0.01 * dy);
             break;
         }
 
+        // Apply velocity and update position
         particle.vx += fx * 0.1;
         particle.vy += fy * 0.1;
-        particle.x += particle.vx * speed;
-        particle.y += particle.vy * speed;
+        particle.x += particle.vx;
+        particle.y += particle.vy;
 
         // Energy dissipation
-        particle.energy -= 0.002;
+        particle.energy -= 0.005;
 
-        // RGB Blending
-        for (const other of particles) {
-          const distance = Math.sqrt((particle.x - other.x) ** 2 + (particle.y - other.y) ** 2);
-          if (distance < 5) {
+        // RGB blending for overlapping particles
+        for (let other of particles) {
+          const dist = Math.sqrt((particle.x - other.x) ** 2 + (particle.y - other.y) ** 2);
+          if (dist < particleRadius * 2) {
             particle.color.r = (particle.color.r + other.color.r) / 2;
             particle.color.g = (particle.color.g + other.color.g) / 2;
             particle.color.b = (particle.color.b + other.color.b) / 2;
@@ -150,6 +140,7 @@
       }
     }
 
+    // Draw particles
     function drawParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -157,19 +148,22 @@
         const { r, g, b } = particle.color;
         ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, particleRadius, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
+    // Animation loop
     function animate() {
       if (!isRunning) return;
-      const time = performance.now() * 0.001;
+
+      const time = performance.now() * 0.002;
       updateParticles(time);
       drawParticles();
       requestAnimationFrame(animate);
     }
 
+    // Event listeners
     startButton.addEventListener("click", () => {
       if (!isRunning) {
         isRunning = true;
@@ -183,6 +177,7 @@
       drawParticles();
     });
 
+    // Initialize
     generateParticles();
     drawParticles();
   </script>
