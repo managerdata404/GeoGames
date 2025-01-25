@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cymatics and Fractal Simulation</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 10;
+    }
+    button, select {
+      margin: 5px;
+      padding: 5px 10px;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="controls">
+  <label for="fractalSelect">Fractal Algorithm:</label>
+  <select id="fractalSelect">
+    <option value="ifs">IFS (Barnsley Fern)</option>
+    <option value="escape">Escape Time (Mandelbrot)</option>
+    <option value="random">Random (Perlin Noise)</option>
+    <option value="lsystem">L-System (Dragon Curve)</option>
+    <option value="attractor">Strange Attractor (Lorenz)</option>
+  </select>
+  <button id="start">Start</button>
+  <button id="reset">Reset</button>
+</div>
+<canvas id="simulationCanvas"></canvas>
+<script>
+const canvas = document.getElementById('simulationCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+const numParticles = 900; // 300 Red, 300 Green, 300 Blue
+const squareSize = Math.min(canvas.width, canvas.height) * 0.8;
+const squareCenter = { x: canvas.width / 2, y: canvas.height / 2 };
+const squareBounds = {
+  left: squareCenter.x - squareSize / 2,
+  right: squareCenter.x + squareSize / 2,
+  top: squareCenter.y - squareSize / 2,
+  bottom: squareCenter.y + squareSize / 2
+};
+let fractalType = 'ifs';
+let running = false;
+
+// Initialize particles
+function initParticles() {
+  particles = [];
+  for (let i = 0; i < numParticles; i++) {
+    particles.push({
+      x: squareCenter.x + Math.random() * squareSize - squareSize / 2,
+      y: squareCenter.y + Math.random() * squareSize - squareSize / 2,
+      vx: Math.random() * 2 - 1,
+      vy: Math.random() * 2 - 1,
+      color: i < 300 ? 'red' : i < 600 ? 'green' : 'blue',
+      energy: Math.random() * 100 + 100
+    });
+  }
+}
+
+// Fractal Algorithms
+function fractalPatterns(particle) {
+  switch (fractalType) {
+    case 'ifs': // IFS (Barnsley Fern)
+      const r = Math.random();
+      const x = particle.x / squareSize * 2 - 1;
+      const y = particle.y / squareSize * 2 - 1;
+      if (r < 0.01) {
+        particle.x = squareCenter.x;
+        particle.y = squareCenter.y + 0.16 * y * squareSize;
+      } else if (r < 0.86) {
+        particle.x = squareCenter.x + (0.85 * x + 0.04 * y) * squareSize;
+        particle.y = squareCenter.y + (-0.04 * x + 0.85 * y + 1.6) * squareSize;
+      } else if (r < 0.93) {
+        particle.x = squareCenter.x + (0.2 * x - 0.26 * y) * squareSize;
+        particle.y = squareCenter.y + (0.23 * x + 0.22 * y + 1.6) * squareSize;
+      } else {
+        particle.x = squareCenter.x + (-0.15 * x + 0.28 * y) * squareSize;
+        particle.y = squareCenter.y + (0.26 * x + 0.24 * y + 0.44) * squareSize;
+      }
+      break;
+    case 'escape': // Mandelbrot Set
+      // Example placeholder
+      break;
+    case 'random': // Perlin Noise
+      // Example placeholder
+      break;
+    case 'lsystem': // Dragon Curve
+      // Example placeholder
+      break;
+    case 'attractor': // Lorenz Attractor
+      // Example placeholder
+      break;
+  }
+}
+
+// Update Particles
+function updateParticles() {
+  particles.forEach((p) => {
+    if (p.energy > 0) {
+      fractalPatterns(p);
+      p.energy -= 0.5;
+    }
+    if (p.x < squareBounds.left || p.x > squareBounds.right) p.vx *= -1;
+    if (p.y < squareBounds.top || p.y > squareBounds.bottom) p.vy *= -1;
+  });
+}
+
+// Render Particles
+function renderParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  particles.forEach((p) => {
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// Animation Loop
+function animate() {
+  if (!running) return;
+  updateParticles();
+  renderParticles();
+  requestAnimationFrame(animate);
+}
+
+// Event Listeners
+document.getElementById('start').addEventListener('click', () => {
+  running = true;
+  animate();
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+  running = false;
+  initParticles();
+  renderParticles();
+});
+
+document.getElementById('fractalSelect').addEventListener('change', (e) => {
+  fractalType = e.target.value;
+});
+
+initParticles();
+renderParticles();
+</script>
+</body>
+</html>
