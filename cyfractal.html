@@ -21,7 +21,7 @@
       color: white;
       font-family: Arial, sans-serif;
     }
-    #controls button {
+    #controls button, #controls select {
       margin: 5px;
       padding: 10px 15px;
       font-size: 16px;
@@ -31,6 +31,11 @@
 <body>
   <canvas id="canvas"></canvas>
   <div id="controls">
+    <select id="fractalSelector">
+      <option value="julia">Julia Set</option>
+      <option value="mandelbrot">Mandelbrot Set</option>
+      <option value="sierpinski">Sierpinski Triangle</option>
+    </select>
     <button id="startButton">Start</button>
     <button id="resetButton">Reset</button>
   </div>
@@ -47,6 +52,7 @@
     const centerY = canvas.height / 2;
     const colors = ["red", "green", "blue"];
     let isRunning = false;
+    let fractalType = "julia";
 
     // Initialize particles
     function generateParticles() {
@@ -83,21 +89,30 @@
       return `rgb(${Math.min(r1 + r2, 255)}, ${Math.min(g1 + g2, 255)}, ${Math.min(b1 + b2, 255)})`;
     }
 
-    // Update particles
+    // Update particles based on fractal algorithm
     function updateParticles(time) {
       for (let particle of particles) {
         const dx = particle.x - centerX;
         const dy = particle.y - centerY;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance > 0) {
-          // Apply cymatics-like movement with Fourier transform
-          const angle = Math.atan2(dy, dx);
-          const wave = Math.sin(distance * 0.05 - time * 0.01) * 10;
+        let angle, scale;
 
-          particle.vx += Math.cos(angle + wave) * 0.5 * particle.energy;
-          particle.vy += Math.sin(angle + wave) * 0.5 * particle.energy;
+        // Apply fractal-specific transformations
+        if (fractalType === "julia") {
+          angle = Math.atan2(dy, dx) + Math.sin(time * 0.001);
+          scale = Math.cos(distance * 0.01 + time * 0.001) * 2;
+        } else if (fractalType === "mandelbrot") {
+          angle = Math.atan2(dy, dx) + Math.sin(distance * 0.01 - time * 0.001);
+          scale = Math.sin(distance * 0.02 + time * 0.001) * 2;
+        } else if (fractalType === "sierpinski") {
+          angle = Math.atan2(dy, dx) * (Math.PI / 3);
+          scale = 1 + Math.cos(distance * 0.02 - time * 0.001) * 0.5;
         }
+
+        // Update velocities based on fractal pattern
+        particle.vx += Math.cos(angle) * scale * particle.energy;
+        particle.vy += Math.sin(angle) * scale * particle.energy;
 
         // Energy dissipation
         particle.energy *= 0.99;
@@ -161,6 +176,10 @@
       isRunning = false;
       generateParticles();
       drawParticles();
+    });
+
+    document.getElementById("fractalSelector").addEventListener("change", (event) => {
+      fractalType = event.target.value;
     });
 
     // Initialize particles
