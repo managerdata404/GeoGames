@@ -3,27 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cymatics and Fractal Simulation</title>
+  <title>Cymatics Fractal Simulation</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
-      background-color: black;
+      background: black;
       font-family: Arial, sans-serif;
     }
     #controls {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.8);
       color: white;
       padding: 10px;
-      border-radius: 5px;
+      border-radius: 8px;
       z-index: 10;
     }
     button, select {
       margin: 5px;
       padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      background: white;
+      color: black;
+      cursor: pointer;
+    }
+    button:hover, select:hover {
+      background: lightgray;
     }
     canvas {
       display: block;
@@ -34,11 +42,11 @@
 <div id="controls">
   <label for="fractalSelect">Fractal Algorithm:</label>
   <select id="fractalSelect">
+    <option value="julia">Julia Set</option>
+    <option value="mandelbrot">Mandelbrot Set</option>
     <option value="ifs">IFS (Barnsley Fern)</option>
-    <option value="escape">Escape Time (Mandelbrot)</option>
     <option value="random">Random (Perlin Noise)</option>
     <option value="lsystem">L-System (Dragon Curve)</option>
-    <option value="attractor">Strange Attractor (Lorenz)</option>
   </select>
   <button id="start">Start</button>
   <button id="reset">Reset</button>
@@ -51,7 +59,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let particles = [];
-const numParticles = 900; // 300 Red, 300 Green, 300 Blue
+const numParticles = 900; // 300 red, 300 green, 300 blue
 const squareSize = Math.min(canvas.width, canvas.height) * 0.8;
 const squareCenter = { x: canvas.width / 2, y: canvas.height / 2 };
 const squareBounds = {
@@ -60,7 +68,7 @@ const squareBounds = {
   top: squareCenter.y - squareSize / 2,
   bottom: squareCenter.y + squareSize / 2
 };
-let fractalType = 'ifs';
+let fractalType = 'julia';
 let running = false;
 
 // Initialize particles
@@ -73,48 +81,69 @@ function initParticles() {
       vx: Math.random() * 2 - 1,
       vy: Math.random() * 2 - 1,
       color: i < 300 ? 'red' : i < 600 ? 'green' : 'blue',
-      energy: Math.random() * 100 + 100
+      energy: 100 + Math.random() * 50
     });
   }
 }
 
-// Fractal Algorithms
-function fractalPatterns(particle) {
+// Cymatics-Fractal Patterns
+function cymaticsFractalPattern(p) {
+  let cx, cy, zx, zy, temp;
+
   switch (fractalType) {
-    case 'ifs': // IFS (Barnsley Fern)
+    case 'julia': // Julia Set
+      cx = -0.7;
+      cy = 0.27015;
+      zx = (p.x - squareCenter.x) / (squareSize / 4);
+      zy = (p.y - squareCenter.y) / (squareSize / 4);
+      for (let i = 0; i < 15; i++) {
+        temp = zx * zx - zy * zy + cx;
+        zy = 2.0 * zx * zy + cy;
+        zx = temp;
+        if (zx * zx + zy * zy > 4.0) break;
+      }
+      p.vx += zx * 0.01;
+      p.vy += zy * 0.01;
+      break;
+    case 'mandelbrot': // Mandelbrot Set
+      zx = 0;
+      zy = 0;
+      cx = (p.x - squareCenter.x) / (squareSize / 4);
+      cy = (p.y - squareCenter.y) / (squareSize / 4);
+      for (let i = 0; i < 15; i++) {
+        temp = zx * zx - zy * zy + cx;
+        zy = 2.0 * zx * zy + cy;
+        zx = temp;
+        if (zx * zx + zy * zy > 4.0) break;
+      }
+      p.vx += zx * 0.01;
+      p.vy += zy * 0.01;
+      break;
+    case 'ifs': // IFS Barnsley Fern
       const r = Math.random();
-      const x = (particle.x - squareCenter.x) / squareSize;
-      const y = (particle.y - squareCenter.y) / squareSize;
+      const x = p.x - squareCenter.x;
+      const y = p.y - squareCenter.y;
       if (r < 0.01) {
-        particle.x = squareCenter.x;
-        particle.y = squareCenter.y + 0.16 * y * squareSize;
+        p.x = squareCenter.x;
+        p.y = squareCenter.y + 0.16 * y;
       } else if (r < 0.86) {
-        particle.x = squareCenter.x + (0.85 * x + 0.04 * y) * squareSize;
-        particle.y = squareCenter.y + (-0.04 * x + 0.85 * y + 1.6) * squareSize;
+        p.x = squareCenter.x + (0.85 * x + 0.04 * y);
+        p.y = squareCenter.y + (-0.04 * x + 0.85 * y + 1.6);
       } else if (r < 0.93) {
-        particle.x = squareCenter.x + (0.2 * x - 0.26 * y) * squareSize;
-        particle.y = squareCenter.y + (0.23 * x + 0.22 * y + 1.6) * squareSize;
+        p.x = squareCenter.x + (0.2 * x - 0.26 * y);
+        p.y = squareCenter.y + (0.23 * x + 0.22 * y + 1.6);
       } else {
-        particle.x = squareCenter.x + (-0.15 * x + 0.28 * y) * squareSize;
-        particle.y = squareCenter.y + (0.26 * x + 0.24 * y + 0.44) * squareSize;
+        p.x = squareCenter.x + (-0.15 * x + 0.28 * y);
+        p.y = squareCenter.y + (0.26 * x + 0.24 * y + 0.44);
       }
       break;
-    case 'escape': // Mandelbrot Set
-      // Example placeholder for Mandelbrot
-      particle.vx += Math.random() * 0.2 - 0.1;
-      particle.vy += Math.random() * 0.2 - 0.1;
+    case 'random': // Random (Perlin Noise)
+      p.vx = Math.sin(p.energy) * 0.5;
+      p.vy = Math.cos(p.energy) * 0.5;
       break;
-    case 'random': // Perlin Noise
-      particle.vx = Math.cos(particle.energy) * 2;
-      particle.vy = Math.sin(particle.energy) * 2;
-      break;
-    case 'lsystem': // Dragon Curve
-      particle.vx = Math.sin(particle.x / squareSize) * 2;
-      particle.vy = Math.cos(particle.y / squareSize) * 2;
-      break;
-    case 'attractor': // Lorenz Attractor
-      particle.vx += Math.sin(particle.energy) * 0.1;
-      particle.vy -= Math.cos(particle.energy) * 0.1;
+    case 'lsystem': // Dragon Curve (L-System)
+      p.vx = Math.sin(p.x / 100) * 0.5;
+      p.vy = Math.cos(p.y / 100) * 0.5;
       break;
   }
 }
@@ -123,7 +152,7 @@ function fractalPatterns(particle) {
 function updateParticles() {
   particles.forEach((p) => {
     if (p.energy > 0) {
-      fractalPatterns(p);
+      cymaticsFractalPattern(p);
       p.energy -= 0.5;
     }
     if (p.x < squareBounds.left || p.x > squareBounds.right) p.vx *= -1;
@@ -136,18 +165,10 @@ function updateParticles() {
 // Render Particles
 function renderParticles() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw square boundary
   ctx.strokeStyle = 'white';
   ctx.lineWidth = 2;
-  ctx.strokeRect(
-    squareBounds.left,
-    squareBounds.top,
-    squareSize,
-    squareSize
-  );
+  ctx.strokeRect(squareBounds.left, squareBounds.top, squareSize, squareSize);
 
-  // Draw particles
   particles.forEach((p) => {
     ctx.fillStyle = p.color;
     ctx.beginPath();
@@ -178,7 +199,7 @@ document.getElementById('reset').addEventListener('click', () => {
 
 document.getElementById('fractalSelect').addEventListener('change', (e) => {
   fractalType = e.target.value;
-  initParticles(); // Reinitialize particles for the selected fractal
+  initParticles();
 });
 
 initParticles();
