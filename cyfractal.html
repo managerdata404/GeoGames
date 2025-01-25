@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cymatics Fractals Grid</title>
+  <title>Cymatics Fractals with Energy Dissipation</title>
   <style>
     body {
       margin: 0;
@@ -22,7 +22,7 @@
       color: white;
       font-family: Arial, sans-serif;
     }
-    #controls label, #controls select, #controls input {
+    #controls button, #controls label, #controls select, #controls input {
       margin: 5px;
     }
   </style>
@@ -40,6 +40,8 @@
     <label>Frequency: <input type="range" id="frequency" min="1" max="20" step="0.1" value="5"></label>
     <label>Amplitude: <input type="range" id="amplitude" min="1" max="10" step="0.1" value="5"></label>
     <label>Particle Speed: <input type="range" id="speed" min="0.1" max="2" step="0.1" value="1"></label>
+    <button id="startButton">Start</button>
+    <button id="resetButton">Reset</button>
   </div>
 
   <script>
@@ -52,18 +54,22 @@
     const frequencySlider = document.getElementById("frequency");
     const amplitudeSlider = document.getElementById("amplitude");
     const speedSlider = document.getElementById("speed");
+    const startButton = document.getElementById("startButton");
+    const resetButton = document.getElementById("resetButton");
 
-    const particles = [];
+    let particles = [];
     const gridRows = 32; // Rows of particles
     const gridCols = 32; // Columns of particles
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
+    let isRunning = false;
 
     function createParticle(x, y, color) {
-      return { x, y, vx: 0, vy: 0, color };
+      return { x, y, vx: 0, vy: 0, energy: 1, color };
     }
 
     function generateParticles() {
+      particles = [];
       const spacingX = canvas.width / gridCols;
       const spacingY = canvas.height / gridRows;
 
@@ -83,12 +89,14 @@
       const fractalAlgorithm = fractalAlgorithmSelect.value;
 
       for (const particle of particles) {
+        if (particle.energy <= 0) continue;
+
         const dx = particle.x - centerX;
         const dy = particle.y - centerY;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         // Cymatics wave motion
-        const wave = Math.sin(frequency * distance * 0.01 - time) * amplitude;
+        const wave = Math.sin(frequency * distance * 0.01 - time) * amplitude * particle.energy;
 
         // Fractal behavior
         let fx, fy;
@@ -116,6 +124,9 @@
         particle.x += particle.vx * speed;
         particle.y += particle.vy * speed;
 
+        // Energy dissipation
+        particle.energy -= 0.002; // Gradual energy decay
+
         // Bounce at boundaries
         if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
         if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
@@ -140,14 +151,28 @@
     }
 
     function animate() {
+      if (!isRunning) return;
       const time = performance.now() * 0.001;
       updateParticles(time);
       drawParticles();
       requestAnimationFrame(animate);
     }
 
+    startButton.addEventListener("click", () => {
+      if (!isRunning) {
+        isRunning = true;
+        animate();
+      }
+    });
+
+    resetButton.addEventListener("click", () => {
+      isRunning = false;
+      generateParticles();
+      drawParticles();
+    });
+
     generateParticles();
-    animate();
+    drawParticles();
   </script>
 </body>
 </html>
