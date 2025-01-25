@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cymatics and Fractal Simulation</title>
+  <title>Cymatics Fractal Simulation</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
       background: black;
-      color: white;
       font-family: Arial, sans-serif;
+      color: white;
     }
     canvas {
       display: block;
@@ -32,13 +32,12 @@
 </head>
 <body>
   <div id="controls">
-    <label for="fractalType">Select Fractal Algorithm:</label>
+    <label for="fractalType">Fractal Algorithm:</label>
     <select id="fractalType">
       <option value="julia">Julia Set</option>
       <option value="mandelbrot">Mandelbrot Set</option>
-      <option value="ifs">IFS (Barnsley Fern)</option>
-      <option value="random">Random (Perlin Noise)</option>
-      <option value="lsystem">L-System (Dragon Curve)</option>
+      <option value="ifs">IFS</option>
+      <option value="lsystem">L-System</option>
     </select>
     <button id="start">Start</button>
     <button id="reset">Reset</button>
@@ -55,19 +54,19 @@
     const CENTER_X = canvas.width / 2;
     const CENTER_Y = canvas.height / 2;
     const PARTICLE_RADIUS = 2;
-    const DECAY_RATE = 0.005; // Energy reduction rate
+    const DECAY_RATE = 0.005; // Energy decay rate
 
     let particles = [];
     let fractalType = 'julia';
     let running = false;
 
-    // Initialize particles in rows (300 red, 300 green, 300 blue)
+    // Initialize particles
     function initParticles() {
       particles = [];
       const rows = Math.ceil(Math.sqrt(PARTICLE_COUNT));
+      const gap = BOUNDARY_SIZE / rows;
       const startX = CENTER_X - BOUNDARY_SIZE / 2;
       const startY = CENTER_Y - BOUNDARY_SIZE / 2;
-      const gap = BOUNDARY_SIZE / rows;
 
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const row = Math.floor(i / rows);
@@ -80,7 +79,7 @@
       }
     }
 
-    // Draw the boundary
+    // Draw boundary
     function drawBoundary() {
       ctx.strokeStyle = 'white';
       ctx.lineWidth = 2;
@@ -102,13 +101,13 @@
       });
     }
 
-    // Update particles' positions and energies
+    // Update particles
     function updateParticles() {
       particles.forEach(p => {
         p.x += p.vx;
         p.y += p.vy;
 
-        // Apply boundary bounce
+        // Bounce off boundaries
         if (p.x - PARTICLE_RADIUS < CENTER_X - BOUNDARY_SIZE / 2 || p.x + PARTICLE_RADIUS > CENTER_X + BOUNDARY_SIZE / 2) {
           p.vx *= -1;
         }
@@ -120,21 +119,20 @@
         p.energy -= DECAY_RATE;
         if (p.energy < 0) p.energy = 0;
 
-        // Blending RGB
-        const overlappingParticles = particles.filter(other => {
-          return other !== p && Math.hypot(other.x - p.x, other.y - p.y) < PARTICLE_RADIUS;
-        });
-
-        if (overlappingParticles.length > 0) {
-          const red = overlappingParticles.filter(o => o.color === 'red').length > 0 ? 255 : 0;
-          const green = overlappingParticles.filter(o => o.color === 'green').length > 0 ? 255 : 0;
-          const blue = overlappingParticles.filter(o => o.color === 'blue').length > 0 ? 255 : 0;
+        // RGB blending for overlapping particles
+        const overlapping = particles.filter(other =>
+          other !== p && Math.hypot(other.x - p.x, other.y - p.y) < PARTICLE_RADIUS * 2
+        );
+        if (overlapping.length > 0) {
+          const red = overlapping.some(o => o.color === 'red') ? 255 : 0;
+          const green = overlapping.some(o => o.color === 'green') ? 255 : 0;
+          const blue = overlapping.some(o => o.color === 'blue') ? 255 : 0;
           p.color = `rgb(${red}, ${green}, ${blue})`;
         }
       });
     }
 
-    // Apply fractal algorithm
+    // Apply fractal pattern logic
     function applyFractal() {
       particles.forEach(p => {
         if (fractalType === 'julia') {
@@ -144,12 +142,21 @@
           const ny = 2 * zx * zy + 0.355;
           p.vx += nx * 0.01;
           p.vy += ny * 0.01;
+        } else if (fractalType === 'mandelbrot') {
+          const zx = p.x - CENTER_X;
+          const zy = p.y - CENTER_Y;
+          const cx = zx * 0.5;
+          const cy = zy * 0.5;
+          const nx = zx * zx - zy * zy + cx;
+          const ny = 2 * zx * zy + cy;
+          p.vx += nx * 0.01;
+          p.vy += ny * 0.01;
         }
-        // Add other fractal algorithms here...
+        // Add IFS and L-System logic here
       });
     }
 
-    // Main animation loop
+    // Animation loop
     function animate() {
       if (!running) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -160,21 +167,17 @@
       requestAnimationFrame(animate);
     }
 
-    // Start simulation
+    // Event listeners
     document.getElementById('start').addEventListener('click', () => {
       running = true;
       animate();
     });
-
-    // Reset simulation
     document.getElementById('reset').addEventListener('click', () => {
       running = false;
       initParticles();
       drawBoundary();
       drawParticles();
     });
-
-    // Fractal type selection
     document.getElementById('fractalType').addEventListener('change', e => {
       fractalType = e.target.value;
     });
