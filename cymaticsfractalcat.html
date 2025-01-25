@@ -3,224 +3,186 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cymatics Fractal Simulation</title>
+  <title>Cymatics and Fractal Simulation</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
       background: black;
+      color: white;
       font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
     }
     #controls {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.7);
       padding: 10px;
       border-radius: 8px;
-      z-index: 10;
     }
-    button, select {
-      margin: 5px;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 4px;
-      background: white;
-      color: black;
-      cursor: pointer;
-    }
-    button:hover, select:hover {
-      background: lightgray;
-    }
-    canvas {
+    #controls select, #controls button {
+      margin-bottom: 10px;
       display: block;
     }
   </style>
 </head>
 <body>
-<div id="controls">
-  <label for="fractalSelect">Fractal Algorithm:</label>
-  <select id="fractalSelect">
-    <option value="julia">Julia Set</option>
-    <option value="mandelbrot">Mandelbrot Set</option>
-    <option value="ifs">IFS (Barnsley Fern)</option>
-    <option value="random">Random (Perlin Noise)</option>
-    <option value="lsystem">L-System (Dragon Curve)</option>
-  </select>
-  <button id="start">Start</button>
-  <button id="reset">Reset</button>
-</div>
-<canvas id="simulationCanvas"></canvas>
-<script>
-const canvas = document.getElementById('simulationCanvas');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+  <div id="controls">
+    <label for="fractalType">Select Fractal Algorithm:</label>
+    <select id="fractalType">
+      <option value="julia">Julia Set</option>
+      <option value="mandelbrot">Mandelbrot Set</option>
+      <option value="ifs">IFS (Barnsley Fern)</option>
+      <option value="random">Random (Perlin Noise)</option>
+      <option value="lsystem">L-System (Dragon Curve)</option>
+    </select>
+    <button id="start">Start</button>
+    <button id="reset">Reset</button>
+  </div>
+  <canvas></canvas>
+  <script>
+    const canvas = document.querySelector('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-let particles = [];
-const numParticles = 900; // 300 red, 300 green, 300 blue
-const squareSize = Math.min(canvas.width, canvas.height) * 0.8;
-const squareCenter = { x: canvas.width / 2, y: canvas.height / 2 };
-const squareBounds = {
-  left: squareCenter.x - squareSize / 2,
-  right: squareCenter.x + squareSize / 2,
-  top: squareCenter.y - squareSize / 2,
-  bottom: squareCenter.y + squareSize / 2
-};
-let fractalType = 'julia';
-let running = false;
+    const PARTICLE_COUNT = 900; // 300 Red, 300 Green, 300 Blue
+    const BOUNDARY_SIZE = Math.min(canvas.width, canvas.height) * 0.8;
+    const CENTER_X = canvas.width / 2;
+    const CENTER_Y = canvas.height / 2;
+    const PARTICLE_RADIUS = 2;
+    const DECAY_RATE = 0.005; // Energy reduction rate
 
-// Initialize particles in rows
-function initParticles() {
-  particles = [];
-  const rows = 30;
-  const cols = numParticles / rows;
-  const spacingX = squareSize / cols;
-  const spacingY = squareSize / rows;
+    let particles = [];
+    let fractalType = 'julia';
+    let running = false;
 
-  for (let i = 0; i < rows; i++) {
-    for (let j = 0; j < cols; j++) {
-      const index = i * cols + j;
-      particles.push({
-        x: squareBounds.left + j * spacingX + spacingX / 2,
-        y: squareBounds.top + i * spacingY + spacingY / 2,
-        vx: 0,
-        vy: 0,
-        color: index < 300 ? 'red' : index < 600 ? 'green' : 'blue',
-        energy: 100 + Math.random() * 50
+    // Initialize particles in rows (300 red, 300 green, 300 blue)
+    function initParticles() {
+      particles = [];
+      const rows = Math.ceil(Math.sqrt(PARTICLE_COUNT));
+      const startX = CENTER_X - BOUNDARY_SIZE / 2;
+      const startY = CENTER_Y - BOUNDARY_SIZE / 2;
+      const gap = BOUNDARY_SIZE / rows;
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const row = Math.floor(i / rows);
+        const col = i % rows;
+        const x = startX + col * gap;
+        const y = startY + row * gap;
+        const color = i < 300 ? 'red' : i < 600 ? 'green' : 'blue';
+
+        particles.push({ x, y, vx: 0, vy: 0, energy: 1, color });
+      }
+    }
+
+    // Draw the boundary
+    function drawBoundary() {
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        CENTER_X - BOUNDARY_SIZE / 2,
+        CENTER_Y - BOUNDARY_SIZE / 2,
+        BOUNDARY_SIZE,
+        BOUNDARY_SIZE
+      );
+    }
+
+    // Draw particles
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, PARTICLE_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
       });
     }
-  }
-}
 
-// Cymatics-Fractal Patterns
-function cymaticsFractalPattern(p) {
-  let cx, cy, zx, zy, temp;
+    // Update particles' positions and energies
+    function updateParticles() {
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
 
-  switch (fractalType) {
-    case 'julia': // Julia Set
-      cx = -0.7;
-      cy = 0.27015;
-      zx = (p.x - squareCenter.x) / (squareSize / 4);
-      zy = (p.y - squareCenter.y) / (squareSize / 4);
-      for (let i = 0; i < 15; i++) {
-        temp = zx * zx - zy * zy + cx;
-        zy = 2.0 * zx * zy + cy;
-        zx = temp;
-        if (zx * zx + zy * zy > 4.0) break;
-      }
-      p.vx += zx * 0.01;
-      p.vy += zy * 0.01;
-      break;
-    case 'mandelbrot': // Mandelbrot Set
-      zx = 0;
-      zy = 0;
-      cx = (p.x - squareCenter.x) / (squareSize / 4);
-      cy = (p.y - squareCenter.y) / (squareSize / 4);
-      for (let i = 0; i < 15; i++) {
-        temp = zx * zx - zy * zy + cx;
-        zy = 2.0 * zx * zy + cy;
-        zx = temp;
-        if (zx * zx + zy * zy > 4.0) break;
-      }
-      p.vx += zx * 0.01;
-      p.vy += zy * 0.01;
-      break;
-    case 'ifs': // IFS (Barnsley Fern)
-      const choice = Math.random();
-      let x = p.x, y = p.y;
-      if (choice < 0.01) {
-        x = 0;
-        y = 0.16 * y;
-      } else if (choice < 0.86) {
-        x = 0.85 * x + 0.04 * y;
-        y = -0.04 * x + 0.85 * y + 1.6;
-      } else if (choice < 0.93) {
-        x = 0.2 * x - 0.26 * y;
-        y = 0.23 * x + 0.22 * y + 1.6;
-      } else {
-        x = -0.15 * x + 0.28 * y;
-        y = 0.26 * x + 0.24 * y + 0.44;
-      }
-      p.vx += x * 0.01;
-      p.vy += y * 0.01;
-      break;
-    case 'random': // Random (Perlin Noise)
-      p.vx += (Math.random() - 0.5) * 0.1;
-      p.vy += (Math.random() - 0.5) * 0.1;
-      break;
-    case 'lsystem': // L-System (Dragon Curve)
-      const angle = Math.random() * Math.PI * 2;
-      p.vx += Math.cos(angle) * 0.05;
-      p.vy += Math.sin(angle) * 0.05;
-      break;
-  }
-}
+        // Apply boundary bounce
+        if (p.x - PARTICLE_RADIUS < CENTER_X - BOUNDARY_SIZE / 2 || p.x + PARTICLE_RADIUS > CENTER_X + BOUNDARY_SIZE / 2) {
+          p.vx *= -1;
+        }
+        if (p.y - PARTICLE_RADIUS < CENTER_Y - BOUNDARY_SIZE / 2 || p.y + PARTICLE_RADIUS > CENTER_Y + BOUNDARY_SIZE / 2) {
+          p.vy *= -1;
+        }
 
-// Update Particles
-function updateParticles() {
-  particles.forEach((p) => {
-    if (p.energy > 0) {
-      cymaticsFractalPattern(p);
-      p.energy -= 0.5; // Decrease energy based on Fourier transformation
-      p.vx *= 0.99; // Gradual energy decay
-      p.vy *= 0.99;
+        // Apply energy decay
+        p.energy -= DECAY_RATE;
+        if (p.energy < 0) p.energy = 0;
+
+        // Blending RGB
+        const overlappingParticles = particles.filter(other => {
+          return other !== p && Math.hypot(other.x - p.x, other.y - p.y) < PARTICLE_RADIUS;
+        });
+
+        if (overlappingParticles.length > 0) {
+          const red = overlappingParticles.filter(o => o.color === 'red').length > 0 ? 255 : 0;
+          const green = overlappingParticles.filter(o => o.color === 'green').length > 0 ? 255 : 0;
+          const blue = overlappingParticles.filter(o => o.color === 'blue').length > 0 ? 255 : 0;
+          p.color = `rgb(${red}, ${green}, ${blue})`;
+        }
+      });
     }
-    if (p.x < squareBounds.left || p.x > squareBounds.right) p.vx *= -1;
-    if (p.y < squareBounds.top || p.y > squareBounds.bottom) p.vy *= -1;
-    p.x += p.vx;
-    p.y += p.vy;
-  });
-}
 
-// RGB Blending
-function blendParticles() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = 'white';
-  ctx.strokeRect(squareBounds.left, squareBounds.top, squareSize, squareSize);
+    // Apply fractal algorithm
+    function applyFractal() {
+      particles.forEach(p => {
+        if (fractalType === 'julia') {
+          const zx = p.x - CENTER_X;
+          const zy = p.y - CENTER_Y;
+          const nx = zx * zx - zy * zy + 0.355;
+          const ny = 2 * zx * zy + 0.355;
+          p.vx += nx * 0.01;
+          p.vy += ny * 0.01;
+        }
+        // Add other fractal algorithms here...
+      });
+    }
 
-  const imgData = ctx.createImageData(canvas.width, canvas.height);
-  particles.forEach(p => {
-    const x = Math.floor(p.x);
-    const y = Math.floor(p.y);
-    const index = (y * canvas.width + x) * 4;
+    // Main animation loop
+    function animate() {
+      if (!running) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBoundary();
+      updateParticles();
+      applyFractal();
+      drawParticles();
+      requestAnimationFrame(animate);
+    }
 
-    imgData.data[index] = Math.min(imgData.data[index] + (p.color === 'red' ? 255 : 0), 255);
-    imgData.data[index + 1] = Math.min(imgData.data[index + 1] + (p.color === 'green' ? 255 : 0), 255);
-    imgData.data[index + 2] = Math.min(imgData.data[index + 2] + (p.color === 'blue' ? 255 : 0), 255);
-    imgData.data[index + 3] = 255;
-  });
-  ctx.putImageData(imgData, 0, 0);
-}
+    // Start simulation
+    document.getElementById('start').addEventListener('click', () => {
+      running = true;
+      animate();
+    });
 
-// Animation Loop
-function animate() {
-  if (!running) return;
-  updateParticles();
-  blendParticles();
-  requestAnimationFrame(animate);
-}
+    // Reset simulation
+    document.getElementById('reset').addEventListener('click', () => {
+      running = false;
+      initParticles();
+      drawBoundary();
+      drawParticles();
+    });
 
-// Event Listeners
-document.getElementById('start').addEventListener('click', () => {
-  running = true;
-  animate();
-});
+    // Fractal type selection
+    document.getElementById('fractalType').addEventListener('change', e => {
+      fractalType = e.target.value;
+    });
 
-document.getElementById('reset').addEventListener('click', () => {
-  running = false;
-  initParticles();
-  blendParticles();
-});
-
-document.getElementById('fractalSelect').addEventListener('change', (e) => {
-  fractalType = e.target.value;
-});
-
-// Initialize Simulation
-initParticles();
-blendParticles();
-</script>
+    // Initialize
+    initParticles();
+    drawBoundary();
+    drawParticles();
+  </script>
 </body>
 </html>
